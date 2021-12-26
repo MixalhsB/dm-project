@@ -1,0 +1,204 @@
+abortive therapy - 0.5
+acupressure - 0.1
+acupuncture - 0.1
+
+
+adjuvant therapy - 0.3
+alternative therapy - 0.2
+androgen replacement therapy - 0.8
+animal-assisted therapy - 0.4
+antibody therapy - 0.7
+antihormone therapy - 0.7
+antiserum therapy - 0.6
+aquarium therapy - 0.1
+aquatic therapy - 0.1
+aromatherapy - 0.1
+art therapy - 0.2
+Auger therapy - 0.5
+aurotherapy - 0.9
+autism therapies - 0.7
+autologous immune enhancement therapy - 0.8
+balneotherapy - 0.3
+bioidentical hormone replacement therapy - 0.3
+biotherapy - 1.0
+blood irradiation therapy - 0.5
+brachytherapy - 0.7
+cardiac resynchronization therapy - 0.8
+
+cytotherapy - 0.9
+cell transfer therapy - 0.8
+chelation therapy - 0.2
+chemotherapy - 0.8
+Chinese food therapy - 0.3
+chiropractic therapy - 0.1
+chronotherapy - 0.4
+
+climatotherapy - 0.5
+cobalt therapy - 0.4
+cold compression therapy - 0.5
+combination therapy - 0.6
+consolidation therapy - 0.7
+contrast bath therapy - 0.2
+counseling - 0.8
+craniosacral therapy - 0.1
+cryotherapy - 0.4
+crystal therapy - 0.1
+cupping therapy - 0.1
+curative therapy - 0.7
+cytoluminescent therapy - 0.6
+dark therapy - 0.2
+definitive therapy - 0.5
+destination therapy - 0.4
+diathermy - 0.6
+diesel therapy - 0.1
+dietary therapy - 0.9
+drug therapy - 0.7
+duct tape occlusion therapy - 0.8
+electrohomeopathy - 0.1
+electroconvulsive therapy - 0.7
+electromagnetic therapy - 0.5
+
+electron therapy - 0.6
+electrotherapy - 0.8
+empiric therapy - 0.7
+energy therapy - 0.1
+enzyme replacement therapy - 0.4
+epigenetic therapy - 0.5
+equine therapy - 0.3
+estrogen replacement therapy - 0.5
+exercise therapy - 0.3
+extracorporeal shockwave therapy - 0.7
+fast neutron therapy - 0.6
+Feldenkrais therapy - 0.2
+
+fluoride therapy - 0.8
+gene therapy - 0.8
+
+
+
+
+
+
+grape therapy - 1.0
+
+halotherapy - 0.1
+
+helminthic therapy - 0.3
+herbal therapy - 0.3
+
+
+hormonal therapy - 0.4
+
+horticultural therapy - 0.5
+host modulatory therapy - 0.6
+hydrotherapy - 0.2
+hyperbaric oxygen therapy - 0.7
+hyperthermia therapy - 0.5
+
+ichthyotherapy - 0.3
+immunosuppressive therapy - 0.8
+immunotherapy - 0.4
+induction therapy - 0.3
+
+
+intravenous immunoglobulin therapy - 0.8
+intravenous therapy - 1.0
+inversion therapy - 0.4
+investigational therapy - 0.2
+laser therapy - 0.4
+leech therapy - 0.2
+
+lithium therapy - 0.2
+low level laser therapy - 0.5
+maggot therapy - 0.3
+magnet therapy - 0.4
+
+maintenance therapy - 0.6
+manual therapy - 0.5
+martial arts therapy - 0.5
+
+massage therapy - 0.7
+medical gas therapy - 0.8
+medical nutrition therapy - 0.5
+
+mesotherapy - 0.1
+microwave thermotherapy - 0.3
+mindfullness - 0.5
+molecular chaperone therapy - 0.6
+molecular therapy - 0.7
+monoclonal antibody therapy - 0.4
+monotherapy - 0.3
+mud therapy - 0.1
+
+negative air ionization therapy - 0.2
+neoadjuvant therapy - 1.0
+neurologic music therapy - 0.5
+
+neutron capture therapy of cancer - 0.4
+neutron therapy - 0.6
+occupational therapy - 0.4
+oral rehydration therapy - 0.5
+osmotherapy - 0.9
+oxygen therapy - 0.7
+ozone therapy - 0.3
+
+particle therapy - 0.5
+
+phage therapy - 0.5
+pharmacotherapy - 0.7
+phonemic neurological hypochromium therapy - 0.5
+photodynamic therapy - 0.2
+phototherapy - 0.4
+photothermal therapy - 0.3
+physical therapy - 0.6
+physiotherapy - 0.9
+phytotherapy - 0.4
+platin therapy - 0.3
+polychemotherapy - 0.9
+polytherapy - 0.6
+
+prolotherapy - 0.8
+
+protein therapy - 0.5
+proton therapy - 0.7
+pulsed electromagnetic field therapy - 0.6
+PUVA therapy - 0.9
+qigong therapy - 0.2
+quack therapies - 0.1
+radiation therapy - 0.9
+
+rehydration therapy - 1.0
+
+respiratory therapy - 0.4
+retail therapy - 0.2
+
+salvage therapy - 0.7
+serotherapy - 0.6
+sex therapy - 0.5
+sonodynamic therapy - 0.1
+sound therapy - 0.3
+spa therapy - 0.2
+speech therapy - 0.6
+speleotherapy - 0.2
+stem cell therapy - 0.8
+
+stepladder therapy - 0.3
+stepdown therapy - 0.4
+stereotactic radiation therapy - 0.9
+supportive therapy - 0.1
+systemic therapy - 0.5
+sweat therapy - 0.1
+tai chi therapy - 0.1
+targeted therapy - 0.6
+thalassotherapy - 0.1
+thermotherapy - 0.5
+TK cell therapy - 0.7
+tolerogenic therapy - 0.6
+transdermal continuous oxygen therapy - 0.5
+transgender hormone therapy - 0.2
+ultraviolet light therapy - 0.8
+urine therapy - 0.1
+virotherapy - 0.3
+wake therapy - 0.4
+Waon therapy - 0.4
+water cure - 0.2

@@ -1,0 +1,105 @@
+[
+    [
+        "1037 [Lexi-Cal Wilcoxen]",
+        26.9,
+        "male",
+        "Cond232 [Rheumatoid arthritis]",
+        "20220106",
+        [
+            [
+                "Th81 [immunosuppressive therapy]",
+                0.8
+            ],
+            [
+                "Th120 [pharmacotherapy]",
+                0.6
+            ],
+            [
+                "Th60 [enzyme replacement therapy]",
+                0.4
+            ],
+            [
+                "Th128 [platin therapy]",
+                0.3
+            ],
+            [
+                "Th149 [speleotherapy]",
+                0.1
+            ]
+        ]
+    ],
+    [
+        "7604 [Tyleia Albrightjr]",
+        21.6,
+        "female",
+        "Cond56 [Chronic obstructive pulmonary disease]",
+        "20220127",
+        [
+            [
+                "Th120 [pharmacotherapy]",
+                1.0
+            ],
+            [
+                "Th116 [oxygen therapy]",
+                0.7
+            ],
+            [
+                "Th32 [climatotherapy]",
+                0.5
+            ],
+            [
+                "Th140 [respiratory therapy]",
+                0.4
+            ],
+            [
+                "Th124 [photothermal therapy]",
+                0.3
+            ],
+            [
+                "Th108 [negative air ionization therapy]",
+                0.2
+            ],
+            [
+                "Th145 [sonodynamic therapy]",
+                0.1
+            ]
+        ]
+    ],
+    [
+        "7869 [Emar Kamara]",
+        32.9,
+        "male",
+        "Cond56 [Chronic obstructive pulmonary disease]",
+        "20211219",
+        [
+            [
+                "Th78 [hyperbaric oxygen therapy]",
+                0.9
+            ],
+            [
+                "Th116 [oxygen therapy]",
+                0.7
+            ],
+            [
+                "Th32 [climatotherapy]",
+                0.5
+            ],
+            [
+                "Th140 [respiratory therapy]",
+                0.4
+            ],
+            [
+                "Th124 [photothermal therapy]",
+                0.3
+            ],
+            [
+                "Th108 [negative air ionization therapy]",
+                0.2
+            ],
+            [
+                "Th145 [sonodynamic therapy]",
+                0.1
+            ]
+        ]
+    ]
+]
