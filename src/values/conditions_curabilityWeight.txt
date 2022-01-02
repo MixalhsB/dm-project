@@ -1,0 +1,322 @@
+Abdominal aortic aneurysm - 0.6
+Acne - 0.6
+Acute cholecystitis - 0.8
+Acute lymphoblastic leukaemia - 0.1
+
+
+Acute myeloid leukaemia - 0.1
+
+
+Acute pancreatitis - 0.3
+Addison's disease - 0.2
+Alcohol-related liver disease - 0.2
+Allergic rhinitis - 0.7
+Allergies - 0.2
+Alzheimer's disease - 0.1
+Anal cancer - 0.2
+Anaphylaxis - 0.5
+Angioedema - 0.5
+Ankylosing spondylitis - 0.4
+Anorexia nervosa - 0.4
+Anxiety - 0.6
+
+Appendicitis - 0.3
+Arthritis (general) - 0.4
+Asbestosis - 0.6
+Asthma - 0.1
+Atopic eczema - 0.8
+Attention deficit hyperactivity disorder (ADHD) - 0.4
+Autistic spectrum disorder (ASD) - 0.1
+Bacterial vaginosis - 0.5
+Benign prostate enlargement - 0.3
+Bile duct cancer (cholangiocarcinoma) - 0.2
+Binge eating - 0.5
+Bipolar disorder - 0.5
+Bladder cancer - 0.1
+Blood poisoning (sepsis) - 0.7
+Bone cancer - 0.1
+
+Bowel cancer - 0.2
+Bowel incontinence - 0.3
+Bowel polyps - 0.3
+Brain stem death - 0.1
+Brain tumours - 0.2
+
+
+Breast cancer - 0.3
+
+Bronchiectasis - 0.4
+Bronchitis - 0.8
+Bulimia - 0.5
+Bunion - 0.4
+Carcinoid syndrome and carcinoid tumours - 0.1
+Catarrh - 0.3
+Cellulitis - 0.5
+Cervical cancer - 0.1
+Chest infection - 0.8
+Chest pain - 0.9
+Chickenpox - 0.7
+Chilblains - 0.6
+Chlamydia - 0.1
+Chronic fatigue syndrome - 0.1
+Chronic kidney disease - 0.1
+Chronic lymphocytic leukaemia - 0.1
+Chronic myeloid leukaemia - 0.1
+Chronic obstructive pulmonary disease - 0.1
+Chronic pancreatitis - 0.1
+Cirrhosis - 0.3
+Clostridium difficile - 0.5
+Coeliac disease - 0.7
+Cold sore - 0.9
+Coma - 0.1
+Common cold - 1.0
+Common heart conditions - 0.3
+Congenital heart disease - 0.2
+Conjunctivitis - 0.4
+Constipation - 0.5
+Coronavirus (COVID-19) - 0.6
+Cough (general) - 0.8
+Crohn's disease - 0.3
+Croup - 0.4
+Cystic fibrosis - 0.5
+Cystitis - 0.6
+Deafblindness - 0.1
+Deep vein thrombosis - 0.7
+Dehydration - 0.9
+
+Dementia with Lewy bodies - 0.1
+Dental abscess - 0.3
+Depression (other than postnatal) - 0.5
+Dermatitis herpetiformis - 0.4
+Diabetes (other than type 1 or 2) - 0.2
+Diarrhoea - 0.9
+Discoid eczema - 0.7
+Diverticular disease and diverticulitis - 0.6
+Dizziness (Lightheadedness) - 0.9
+
+Dry mouth - 0.8
+Dysphagia (swallowing problems) - 0.7
+Dystonia - 0.5
+Earache - 0.8
+Earwax build-up - 0.9
+Ebola virus disease - 0.5
+Ectopic pregnancy - 0.8
+Endometriosis - 0.1
+Epilepsy - 0.4
+Erectile dysfunction (impotence) - 0.4
+Escherichia coli (E. coli) O157 - 0.6
+Ewing sarcoma - 0.4
+
+Eye cancer - 0.2
+Febrile seizures - 0.4
+Fever - 0.7
+
+Fibroids - 0.4
+Fibromyalgia - 0.3
+Flatulence - 0.9
+Flu - 0.9
+Foetal alcohol syndrome - 0.1
+Food poisoning - 0.9
+Fungal nail infection - 0.8
+Gallbladder cancer - 0.2
+Gallstones - 0.3
+Ganglion cyst - 0.4
+Gastroenteritis - 0.6
+Gastro-oesophageal reflux disease (GORD) - 0.5
+Genital herpes - 0.2
+Genital warts - 0.3
+Germ cell tumours - 0.1
+Glandular fever - 0.7
+Gonorrhoea - 0.5
+Gout - 0.3
+Gum disease - 0.3
+Haemorrhoids (piles) - 0.7
+Hairy cell leukaemia - 0.1
+Hand, foot and mouth disease - 0.9
+Hay fever - 0.9
+Head and neck cancer - 0.2
+Head lice and nits - 0.6
+Headaches - 1.0
+Hearing loss - 0.1
+Heart failure - 0.2
+Hepatitis A - 0.1
+Hepatitis B - 0.1
+Hepatitis C - 0.1
+Hiatus hernia - 0.9
+High cholesterol - 0.8
+HIV - 0.1
+Hodgkin lymphoma - 0.3
+
+
+Huntington's disease - 0.3
+Hyperglycaemia (high blood sugar) - 0.6
+Hyperhidrosis - 0.9
+Hypoglycaemia (low blood sugar) - 0.6
+Idiopathic pulmonary fibrosis - 0.5
+Impetigo - 0.4
+Indigestion - 0.7
+Ingrown toenail - 0.9
+Inherited heart conditions - 0.1
+Insomnia - 0.7
+Iron deficiency anaemia - 0.4
+Irritable bowel syndrome (IBS) - 0.5
+Irritable hip - 0.5
+Itching - 0.9
+Itchy bottom - 0.9
+Kaposi's sarcoma - 0.4
+Kidney cancer - 0.1
+Kidney infection - 0.6
+Kidney stones - 0.3
+Labyrinthitis - 0.2
+Lactose intolerance - 0.1
+Langerhans cell histiocytosis - 0.7
+Laryngeal (larynx) cancer - 0.2
+Laryngitis - 0.7
+Leg cramps - 0.8
+Lichen planus - 0.8
+Liver cancer - 0.1
+Liver disease - 0.4
+Liver tumours - 0.1
+Loss of libido - 0.5
+Lung cancer - 0.1
+Lupus - 0.8
+Lyme disease - 0.6
+Lymphoedema - 0.3
+Lymphogranuloma venereum (LGV) - 0.7
+Malaria - 0.6
+Malignant brain tumour (cancerous) - 0.1
+Malnutrition - 1.0
+Measles - 0.5
+Meningitis - 0.8
+
+Mesothelioma - 0.4
+Middle ear infection (otitis media) - 0.9
+Migraine - 0.6
+
+Motor neurone disease (MND) - 0.3
+Mouth cancer - 0.1
+Mouth ulcer - 0.3
+Multiple myeloma - 0.2
+Multiple sclerosis (MS) - 0.1
+Mumps - 0.7
+Meniere's disease - 0.6
+Nasal and sinus cancer - 0.8
+Nasopharyngeal cancer - 0.4
+Neuroblastoma - 0.4
+
+Neuroendocrine tumours - 0.1
+Non-alcoholic fatty liver disease (NAFLD) - 0.2
+Non-Hodgkin lymphoma - 0.2
+
+Norovirus - 0.8
+Nosebleed - 0.9
+Obesity - 0.9
+Obsessive compulsive disorder (OCD) - 0.3
+Obstructive sleep apnoea - 0.2
+Oesophageal cancer - 0.1
+Oral thrush - 0.4
+Osteoarthritis - 0.7
+Osteoporosis - 0.3
+Osteosarcoma - 0.3
+Otitis externa - 0.5
+Ovarian cancer - 0.2
+
+Ovarian cyst - 0.9
+Overactive thyroid - 0.6
+Paget's disease of the nipple - 0.8
+Pancreatic cancer - 0.1
+Panic disorder - 0.4
+Parkinson's disease - 0.1
+Pelvic inflammatory disease - 0.8
+Pelvic organ prolapse - 0.4
+Penile cancer - 0.2
+Peripheral neuropathy - 0.3
+Personality disorder - 0.2
+Pleurisy - 0.6
+Pneumonia - 0.7
+Polymyalgia rheumatica - 0.5
+Post-traumatic stress disorder (PTSD) - 0.4
+Postnatal depression - 0.9
+
+Pressure ulcers - 0.3
+Prostate cancer - 0.1
+Psoriasis - 0.5
+Psoriatic arthritis - 0.5
+Psychosis - 0.6
+Pubic lice - 0.8
+Rare tumours - 0.1
+Raynaud's phenomenon - 0.7
+Reactive arthritis - 0.3
+Restless legs syndrome - 0.2
+Retinoblastoma - 0.5
+
+Rhabdomyosarcoma - 0.4
+Rheumatoid arthritis - 0.3
+Ringworm and other fungal infections - 1.0
+Rosacea - 0.5
+Scabies - 0.7
+Scarlet fever - 0.9
+Schizophrenia - 0.2
+Scoliosis - 0.2
+Septic shock - 0.9
+Shingles - 0.6
+Shortness of breath - 0.3
+Sickle cell disease - 0.7
+Sinusitis - 0.6
+Sjogren's syndrome - 0.3
+Skin cancer (melanoma) - 0.2
+Skin cancer (non-melanoma) - 0.2
+Slapped cheek syndrome - 0.8
+Soft tissue sarcomas - 0.5
+
+Sore throat - 0.7
+Spleen problems and spleen removal - 0.7
+
+Stomach ache and abdominal pain - 0.3
+Stomach cancer - 0.1
+Stomach ulcer - 0.4
+Stress, anxiety and low mood - 0.4
+Stroke - 0.3
+
+
+Sunburn - 1.0
+Swollen glands - 0.9
+Syphilis - 0.1
+Testicular cancer - 0.3
+
+Testicular lumps and swellings - 0.6
+Thirst - 1.0
+Threadworms - 0.8
+Thrush (general) - 0.7
+
+Thyroid cancer - 0.1
+
+Tinnitus - 0.4
+Tonsillitis - 0.8
+Tooth decay - 0.3
+Toothache - 0.5
+Transient ischaemic attack (TIA) - 0.3
+Trigeminal neuralgia - 0.3
+Tuberculosis (TB) - 0.8
+Type 1 diabetes - 0.1
+Type 2 diabetes - 0.1
+Trichomonas infection - 0.5
+Ulcerative colitis - 1.0
+Underactive thyroid - 0.5
+Urinary incontinence - 0.2
+Urinary tract infection (UTI) - 0.9
+
+Urticaria (hives) - 0.9
+Vaginal cancer - 0.2
+Vaginal thrush - 0.8
+Varicose eczema - 0.6
+Venous leg ulcer - 0.7
+Vertigo - 0.8
+Vitamin B12 or folate deficiency anaemia - 0.2
+Vomiting - 0.9
+Vulval cancer - 0.2
+Warts and verrucas - 0.9
+Whooping cough - 0.8
+Wilms’ tumour - 0.1
+Womb (uterus) cancer - 0.2
+Yellow fever - 0.7

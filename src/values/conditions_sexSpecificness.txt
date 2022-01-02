@@ -1,0 +1,322 @@
+Abdominal aortic aneurysm - b
+Acne - b
+Acute cholecystitis - b
+Acute lymphoblastic leukaemia - b
+
+
+Acute myeloid leukaemia - b
+
+
+Acute pancreatitis - b
+Addison's disease - b
+Alcohol-related liver disease - b
+Allergic rhinitis - b
+Allergies - b
+Alzheimer's disease - b
+Anal cancer - b
+Anaphylaxis - b
+Angioedema - b
+Ankylosing spondylitis - b
+Anorexia nervosa - b
+Anxiety - b
+
+Appendicitis - b
+Arthritis (general) - b
+Asbestosis - b
+Asthma - b
+Atopic eczema - b
+Attention deficit hyperactivity disorder (ADHD) - b
+Autistic spectrum disorder (ASD) - b
+Bacterial vaginosis - f
+Benign prostate enlargement - m
+Bile duct cancer (cholangiocarcinoma) - b
+Binge eating - b
+Bipolar disorder - b
+Bladder cancer - b
+Blood poisoning (sepsis) - b
+Bone cancer - b
+
+Bowel cancer - b
+Bowel incontinence - b
+Bowel polyps - b
+Brain stem death - b
+Brain tumours - b
+
+
+Breast cancer - b
+
+Bronchiectasis - b
+Bronchitis - b
+Bulimia - b
+Bunion - b
+Carcinoid syndrome and carcinoid tumours - b
+Catarrh - b
+Cellulitis - b
+Cervical cancer - b
+Chest infection - b
+Chest pain - b
+Chickenpox - b
+Chilblains - b
+Chlamydia - b
+Chronic fatigue syndrome - b
+Chronic kidney disease - b
+Chronic lymphocytic leukaemia - b
+Chronic myeloid leukaemia - b
+Chronic obstructive pulmonary disease - b
+Chronic pancreatitis - b
+Cirrhosis - b
+Clostridium difficile - b
+Coeliac disease - b
+Cold sore - b
+Coma - b
+Common cold - b
+Common heart conditions - b
+Congenital heart disease - b
+Conjunctivitis - b
+Constipation - b
+Coronavirus (COVID-19) - b
+Cough (general) - b
+Crohn's disease - b
+Croup - b
+Cystic fibrosis - b
+Cystitis - b
+Deafblindness - b
+Deep vein thrombosis - b
+Dehydration - b
+
+Dementia with Lewy bodies - b
+Dental abscess - b
+Depression (other than postnatal) - b
+Dermatitis herpetiformis - b
+Diabetes (other than type 1 or 2) - b
+Diarrhoea - b
+Discoid eczema - b
+Diverticular disease and diverticulitis - b
+Dizziness (Lightheadedness) - b
+
+Dry mouth - b
+Dysphagia (swallowing problems) - b
+Dystonia - b
+Earache - b
+Earwax build-up - b
+Ebola virus disease - b
+Ectopic pregnancy - f
+Endometriosis - f
+Epilepsy - b
+Erectile dysfunction (impotence) - m
+Escherichia coli (E. coli) O157 - b
+Ewing sarcoma - b
+
+Eye cancer - b
+Febrile seizures - b
+Fever - b
+
+Fibroids - b
+Fibromyalgia - b
+Flatulence - b
+Flu - b
+Foetal alcohol syndrome - b
+Food poisoning - b
+Fungal nail infection - b
+Gallbladder cancer - b
+Gallstones - b
+Ganglion cyst - b
+Gastroenteritis - b
+Gastro-oesophageal reflux disease (GORD) - b
+Genital herpes - b
+Genital warts - b
+Germ cell tumours - b
+Glandular fever - b
+Gonorrhoea - b
+Gout - b
+Gum disease - b
+Haemorrhoids (piles) - b
+Hairy cell leukaemia - b
+Hand, foot and mouth disease - b
+Hay fever - b
+Head and neck cancer - b
+Head lice and nits - b
+Headaches - b
+Hearing loss - b
+Heart failure - b
+Hepatitis A - b
+Hepatitis B - b
+Hepatitis C - b
+Hiatus hernia - b
+High cholesterol - b
+HIV - b
+Hodgkin lymphoma - b
+
+
+Huntington's disease - b
+Hyperglycaemia (high blood sugar) - b
+Hyperhidrosis - b
+Hypoglycaemia (low blood sugar) - b
+Idiopathic pulmonary fibrosis - b
+Impetigo - b
+Indigestion - b
+Ingrown toenail - b
+Inherited heart conditions - b
+Insomnia - b
+Iron deficiency anaemia - b
+Irritable bowel syndrome (IBS) - b
+Irritable hip - b
+Itching - b
+Itchy bottom - b
+Kaposi's sarcoma - b
+Kidney cancer - b
+Kidney infection - b
+Kidney stones - b
+Labyrinthitis - b
+Lactose intolerance - b
+Langerhans cell histiocytosis - b
+Laryngeal (larynx) cancer - b
+Laryngitis - b
+Leg cramps - b
+Lichen planus - b
+Liver cancer - b
+Liver disease - b
+Liver tumours - b
+Loss of libido - b
+Lung cancer - b
+Lupus - b
+Lyme disease - b
+Lymphoedema - b
+Lymphogranuloma venereum (LGV) - b
+Malaria - b
+Malignant brain tumour (cancerous) - b
+Malnutrition - b
+Measles - b
+Meningitis - b
+
+Mesothelioma - b
+Middle ear infection (otitis media) - b
+Migraine - b
+
+Motor neurone disease (MND) - b
+Mouth cancer - b
+Mouth ulcer - b
+Multiple myeloma - b
+Multiple sclerosis (MS) - b
+Mumps - b
+Meniere's disease - b
+Nasal and sinus cancer - b
+Nasopharyngeal cancer - b
+Neuroblastoma - b
+
+Neuroendocrine tumours - b
+Non-alcoholic fatty liver disease (NAFLD) - b
+Non-Hodgkin lymphoma - b
+
+Norovirus - b
+Nosebleed - b
+Obesity - b
+Obsessive compulsive disorder (OCD) - b
+Obstructive sleep apnoea - b
+Oesophageal cancer - b
+Oral thrush - b
+Osteoarthritis - b
+Osteoporosis - b
+Osteosarcoma - b
+Otitis externa - b
+Ovarian cancer - b
+
+Ovarian cyst - b
+Overactive thyroid - b
+Paget's disease of the nipple - b
+Pancreatic cancer - b
+Panic disorder - b
+Parkinson's disease - b
+Pelvic inflammatory disease - b
+Pelvic organ prolapse - b
+Penile cancer - m
+Peripheral neuropathy - b
+Personality disorder - b
+Pleurisy - b
+Pneumonia - b
+Polymyalgia rheumatica - b
+Post-traumatic stress disorder (PTSD) - b
+Postnatal depression - f
+
+Pressure ulcers - b
+Prostate cancer - m
+Psoriasis - b
+Psoriatic arthritis - b
+Psychosis - b
+Pubic lice - b
+Rare tumours - b
+Raynaud's phenomenon - b
+Reactive arthritis - b
+Restless legs syndrome - b
+Retinoblastoma - b
+
+Rhabdomyosarcoma - b
+Rheumatoid arthritis - b
+Ringworm and other fungal infections - b
+Rosacea - b
+Scabies - b
+Scarlet fever - b
+Schizophrenia - b
+Scoliosis - b
+Septic shock - b
+Shingles - b
+Shortness of breath - b
+Sickle cell disease - b
+Sinusitis - b
+Sjogren's syndrome - b
+Skin cancer (melanoma) - b
+Skin cancer (non-melanoma) - b
+Slapped cheek syndrome - b
+Soft tissue sarcomas - b
+
+Sore throat - b
+Spleen problems and spleen removal - b
+
+Stomach ache and abdominal pain - b
+Stomach cancer - b
+Stomach ulcer - b
+Stress, anxiety and low mood - b
+Stroke - b
+
+
+Sunburn - b
+Swollen glands - b
+Syphilis - b
+Testicular cancer - m
+
+Testicular lumps and swellings - m
+Thirst - b
+Threadworms - b
+Thrush (general) - b
+
+Thyroid cancer - b
+
+Tinnitus - b
+Tonsillitis - b
+Tooth decay - b
+Toothache - b
+Transient ischaemic attack (TIA) - b
+Trigeminal neuralgia - b
+Tuberculosis (TB) - b
+Type 1 diabetes - b
+Type 2 diabetes - b
+Trichomonas infection - b
+Ulcerative colitis - b
+Underactive thyroid - b
+Urinary incontinence - b
+Urinary tract infection (UTI) - b
+
+Urticaria (hives) - b
+Vaginal cancer - f
+Vaginal thrush - f
+Varicose eczema - b
+Venous leg ulcer - b
+Vertigo - b
+Vitamin B12 or folate deficiency anaemia - b
+Vomiting - b
+Vulval cancer - f
+Warts and verrucas - b
+Whooping cough - b
+Wilms’ tumour - b
+Womb (uterus) cancer - f
+Yellow fever - b
