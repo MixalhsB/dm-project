@@ -190,7 +190,7 @@ def main():
                 days += added_days
                 tr_end_date = pc_starting_date + days
                 tr_count += 1
-                patient['trials'].append({'id': 'tr' + str(tr_count), 'start': str_dt(tr_starting_date), 'end': str_dt(tr_end_date), 'condition': pc['id'], 'therapy': pth['id'], 'successful': str(int(success * 100)) + '%'}) # 'id' not with final value!
+                patient['trials'].append({'id': 'tr' + str(tr_count), 'start': str_dt(tr_starting_date), 'end': str_dt(tr_end_date), 'condition': patient['conditions'][-1]['id'], 'therapy': pth['id'], 'successful': str(int(success * 100)) + '%'}) # 'id' and 'condition' not with final value!
                 if success == 1.0 or len(possible_trials) == 0 or random.randint(1, 10) == 1:
                     break
                 waiting_days = random.randint(1, 30)
@@ -210,11 +210,14 @@ def main():
                 ####
         patient['conditions'].sort(key=lambda x: x['diagnosed']) # sort patient's conditions by starting date
         patient['trials'].sort(key=lambda x: x['start']) # sort patient's trials by starting date
-        condition_ids, trial_ids = sorted([y['id'] for y in patient['conditions']], key=lambda x: int(x.replace('pc', ''))), sorted([y['id'] for y in patient['trials']], key=lambda x: int(x.replace('tr', '')))
+        old_condition_ids, old_trial_ids = [x['id'] for x in patient['conditions']], [x['id'] for x in patient['trials']]
+        condition_ids, trial_ids = sorted(old_condition_ids, key=lambda x: int(x.replace('pc', ''))), sorted(old_trial_ids, key=lambda x: int(x.replace('tr', '')))
+        old2new_condition = {old: new for old, new in zip(old_condition_ids, condition_ids)}
         for j, pc_item in enumerate(patient['conditions']): # final values for 'id' after time-based sorting
             pc_item['id'] = condition_ids[j]
-        for j, tr_item in enumerate(patient['trials']): # final values for 'id' after time-based sorting
+        for j, tr_item in enumerate(patient['trials']): # final values for 'id' and 'condition' after time-based sorting
             tr_item['id'] = trial_ids[j]
+            tr_item['condition'] = old2new_condition[tr_item['condition']]
         result['Patients'].append(patient)
     output_filename = '../data/dataset.json'
     with open(output_filename, 'w', encoding='utf-8') as f:
