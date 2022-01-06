@@ -9,32 +9,13 @@ cimport numpy as np
 from libc.stdlib cimport malloc, free
 
 
-cdef struct Patient:
-    (char *) id
-    (char **) pcondition_ids, trial_ids, names_of_further_attributes, values_of_further_attributes
-
-cdef struct PCondition:
-    (char *) id, kind, type
-    int diagnosed, cured
-
-cdef struct Trial:
-    (char *) id, pcondition_id, therapy_id
-    int start, end, successful
-
-cdef struct Therapy:
-    (char *) id, type
-
-
-cdef int main(str filepath, bytes patient_id, bytes pcondition_kind):
+cdef int main(str filepath, str patient_id, str pcondition_kind):
     assert os.path.exists(filepath)
 
     cdef:
-        str pp, pc_id_str
-        bytes pc_id_bytes
+        str pp
         size_t i, pc_num, number_of_conditions, number_of_therapies, number_of_patients
         np.ndarray utility_tensor
-        Patient patient
-        PCondition pcondition
 
     # parse dataset:
     parser = cysimdjson.JSONParser()
@@ -44,23 +25,16 @@ cdef int main(str filepath, bytes patient_id, bytes pcondition_kind):
     number_of_patients = len(dataset.at_pointer('/Patients'))
     print('Successfully parsed %s' % filepath)
 
-
-    # load in patient info: TODO tbc or abort?
-    assert patient_id.isdigit()
+    #iterate over patient's conditoins: TODO debug
     pp = '/Patients/%d' % (int(patient_id) - 1)
-    patient.id = patient_id
-    pc_num = len(dataset.at_pointer('%s/conditions' % pp))
-    patient.pcondition_ids = <char **>malloc(pc_num * 16 * sizeof(char)) # assuming len('pc...') <= 16
-    for i in range(pc_num):
-        pc_id_str = dataset.at_pointer('%s/conditions/%d/id' % (pp, i))
-        pc_id_bytes = pc_id_str.encode()
-        assert(len(pc_id_bytes) <= 16)
-        patient.pcondition_ids[i] = pc_id_bytes
-    free(patient.pcondition_ids)
+    for i in range(len(dataset.at_pointer('%s/conditions' % pp))):
+        print(dataset.at_pointer('%s/conditions/%d/id' % (pp, i)))
+
+    #show attributes of patient: TODO debug
+    print([x for x in dataset.at_pointer(pp).keys()]) # keep this and for other kinds also keya
 
     # TODO remove cuz experimental:
     utility_tensor = np.empty((number_of_patients, 30), dtype=np.float)
-
 
     # finish:
     print('Everything okay!')
@@ -69,4 +43,4 @@ cdef int main(str filepath, bytes patient_id, bytes pcondition_kind):
 
 if __name__ == '__main__':
     assert len(sys.argv) == 4
-    main(sys.argv[1], sys.argv[2].encode(), sys.argv[3].encode())
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
