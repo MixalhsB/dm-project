@@ -686,7 +686,6 @@ static CYTHON_INLINE float __PYX_NAN() {
 
     /* NumPy API declarations from "numpy/__init__.pxd" */
     
-#include <stdlib.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -1551,6 +1550,13 @@ static CYTHON_INLINE PyObject* __Pyx_PyTuple_GetSlice(PyObject* src, Py_ssize_t 
 #define __Pyx_PyTuple_GetSlice(seq, start, stop)  PySequence_GetSlice(seq, start, stop)
 #endif
 
+/* ObjectGetItem.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject* key);
+#else
+#define __Pyx_PyObject_GetItem(obj, key)  PyObject_GetItem(obj, key)
+#endif
+
 /* WriteUnraisableException.proto */
 static void __Pyx_WriteUnraisable(const char *name, int clineno,
                                   int lineno, const char *filename,
@@ -1782,8 +1788,6 @@ static PyTypeObject *__pyx_ptype_5numpy_flexible = 0;
 static PyTypeObject *__pyx_ptype_5numpy_character = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 
-/* Module declarations from 'libc.stdlib' */
-
 /* Module declarations from 'recommend' */
 static int __pyx_f_9recommend_main(PyObject *, PyObject *, PyObject *); /*proto*/
 #define __Pyx_MODULE_NAME "recommend"
@@ -1896,15 +1900,15 @@ static PyObject *__pyx_tuple__5;
 static PyObject *__pyx_tuple__6;
 /* Late includes */
 
-/* "recommend.pyx":12
+/* "recommend.pyx":11
  * 
  * 
- * cdef int main(str filepath, str patient_id, str pcondition_kind):             # <<<<<<<<<<<<<<
+ * cdef int main(str filepath, str arg_patient_id, str arg_pc_kind):             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i, j, k, num_patients, num_conditions, num_therapies
  */
 
-static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyObject *__pyx_v_patient_id, CYTHON_UNUSED PyObject *__pyx_v_pcondition_kind) {
+static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, PyObject *__pyx_v_arg_patient_id, PyObject *__pyx_v_arg_pc_kind) {
   size_t __pyx_v_i;
   size_t __pyx_v_j;
   size_t __pyx_v_k;
@@ -1925,6 +1929,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
   PyObject *__pyx_v_dataset = 0;
   PyObject *__pyx_v_patient = 0;
   PyObject *__pyx_v_f = NULL;
+  PyObject *__pyx_v_condition = NULL;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1958,7 +1963,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("main", 0);
 
-  /* "recommend.pyx":22
+  /* "recommend.pyx":21
  * 
  *     # parse dataset:
  *     assert os.path.exists(filepath)             # <<<<<<<<<<<<<<
@@ -1967,12 +1972,12 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
   #ifndef CYTHON_WITHOUT_ASSERTIONS
   if (unlikely(!Py_OptimizeFlag)) {
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 21, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_exists); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_exists); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -1987,19 +1992,19 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
     }
     __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_v_filepath) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_filepath);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 22, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 21, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (unlikely(!__pyx_t_4)) {
       PyErr_SetNone(PyExc_AssertionError);
-      __PYX_ERR(0, 22, __pyx_L1_error)
+      __PYX_ERR(0, 21, __pyx_L1_error)
     }
   }
   #endif
 
-  /* "recommend.pyx":23
+  /* "recommend.pyx":22
  *     # parse dataset:
  *     assert os.path.exists(filepath)
  *     with open(filepath, 'r', encoding='utf-8') as f:             # <<<<<<<<<<<<<<
@@ -2007,7 +2012,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  *     num_patients = len(dataset['Patients'])
  */
   /*with:*/ {
-    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 23, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_INCREF(__pyx_v_filepath);
     __Pyx_GIVEREF(__pyx_v_filepath);
@@ -2015,16 +2020,16 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
     __Pyx_INCREF(__pyx_n_u_r);
     __Pyx_GIVEREF(__pyx_n_u_r);
     PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_n_u_r);
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_encoding, __pyx_kp_u_utf_8) < 0) __PYX_ERR(0, 23, __pyx_L1_error)
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 23, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_encoding, __pyx_kp_u_utf_8) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_5 = __Pyx_PyObject_LookupSpecial(__pyx_t_3, __pyx_n_s_exit); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 23, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_LookupSpecial(__pyx_t_3, __pyx_n_s_exit); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 22, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = __Pyx_PyObject_LookupSpecial(__pyx_t_3, __pyx_n_s_enter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 23, __pyx_L3_error)
+    __pyx_t_1 = __Pyx_PyObject_LookupSpecial(__pyx_t_3, __pyx_n_s_enter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L3_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -2038,7 +2043,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
     }
     __pyx_t_2 = (__pyx_t_6) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_6) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L3_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L3_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = __pyx_t_2;
@@ -2056,16 +2061,16 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
           __pyx_v_f = __pyx_t_1;
           __pyx_t_1 = 0;
 
-          /* "recommend.pyx":24
+          /* "recommend.pyx":23
  *     assert os.path.exists(filepath)
  *     with open(filepath, 'r', encoding='utf-8') as f:
  *         dataset = json.load(f)             # <<<<<<<<<<<<<<
  *     num_patients = len(dataset['Patients'])
  *     num_conditions = len(dataset['Conditions'])
  */
-          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L7_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_json); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 23, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_load); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L7_error)
+          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_load); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __pyx_t_3 = NULL;
@@ -2080,14 +2085,14 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
           }
           __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_v_f) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_f);
           __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L7_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 23, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 24, __pyx_L7_error)
+          if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 23, __pyx_L7_error)
           __pyx_v_dataset = ((PyObject*)__pyx_t_1);
           __pyx_t_1 = 0;
 
-          /* "recommend.pyx":23
+          /* "recommend.pyx":22
  *     # parse dataset:
  *     assert os.path.exists(filepath)
  *     with open(filepath, 'r', encoding='utf-8') as f:             # <<<<<<<<<<<<<<
@@ -2106,20 +2111,20 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("recommend.main", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_3) < 0) __PYX_ERR(0, 23, __pyx_L9_except_error)
+          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_3) < 0) __PYX_ERR(0, 22, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_6 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 23, __pyx_L9_except_error)
+          __pyx_t_6 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 22, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_6);
           __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 23, __pyx_L9_except_error)
+          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 22, __pyx_L9_except_error)
           __Pyx_GOTREF(__pyx_t_10);
           __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_10);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          if (__pyx_t_4 < 0) __PYX_ERR(0, 23, __pyx_L9_except_error)
+          if (__pyx_t_4 < 0) __PYX_ERR(0, 22, __pyx_L9_except_error)
           __pyx_t_11 = ((!(__pyx_t_4 != 0)) != 0);
           if (__pyx_t_11) {
             __Pyx_GIVEREF(__pyx_t_1);
@@ -2127,7 +2132,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
             __Pyx_XGIVEREF(__pyx_t_3);
             __Pyx_ErrRestoreWithState(__pyx_t_1, __pyx_t_2, __pyx_t_3);
             __pyx_t_1 = 0; __pyx_t_2 = 0; __pyx_t_3 = 0; 
-            __PYX_ERR(0, 23, __pyx_L9_except_error)
+            __PYX_ERR(0, 22, __pyx_L9_except_error)
           }
           __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -2153,7 +2158,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
         if (__pyx_t_5) {
           __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple_, NULL);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-          if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 23, __pyx_L1_error)
+          if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 22, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
         }
@@ -2168,87 +2173,87 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
     __pyx_L16:;
   }
 
-  /* "recommend.pyx":25
+  /* "recommend.pyx":24
  *     with open(filepath, 'r', encoding='utf-8') as f:
  *         dataset = json.load(f)
  *     num_patients = len(dataset['Patients'])             # <<<<<<<<<<<<<<
  *     num_conditions = len(dataset['Conditions'])
  *     num_therapies = len(dataset['Therapies'])
  */
-  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 25, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 24, __pyx_L1_error) }
   if (unlikely(__pyx_v_dataset == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 25, __pyx_L1_error)
+    __PYX_ERR(0, 24, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Patients); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Patients); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_num_patients = __pyx_t_12;
 
-  /* "recommend.pyx":26
+  /* "recommend.pyx":25
  *         dataset = json.load(f)
  *     num_patients = len(dataset['Patients'])
  *     num_conditions = len(dataset['Conditions'])             # <<<<<<<<<<<<<<
  *     num_therapies = len(dataset['Therapies'])
  *     print('-> Successfully parsed %s' % filepath)
  */
-  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 26, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 25, __pyx_L1_error) }
   if (unlikely(__pyx_v_dataset == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 26, __pyx_L1_error)
+    __PYX_ERR(0, 25, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Conditions); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Conditions); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_num_conditions = __pyx_t_12;
 
-  /* "recommend.pyx":27
+  /* "recommend.pyx":26
  *     num_patients = len(dataset['Patients'])
  *     num_conditions = len(dataset['Conditions'])
  *     num_therapies = len(dataset['Therapies'])             # <<<<<<<<<<<<<<
  *     print('-> Successfully parsed %s' % filepath)
  * 
  */
-  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 27, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 26, __pyx_L1_error) }
   if (unlikely(__pyx_v_dataset == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 27, __pyx_L1_error)
+    __PYX_ERR(0, 26, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Therapies); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Therapies); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_12 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_num_therapies = __pyx_t_12;
 
-  /* "recommend.pyx":28
+  /* "recommend.pyx":27
  *     num_conditions = len(dataset['Conditions'])
  *     num_therapies = len(dataset['Therapies'])
  *     print('-> Successfully parsed %s' % filepath)             # <<<<<<<<<<<<<<
  * 
  *     # create utility tensor:
  */
-  __pyx_t_3 = PyUnicode_Format(__pyx_kp_u_Successfully_parsed_s, __pyx_v_filepath); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_3 = PyUnicode_Format(__pyx_kp_u_Successfully_parsed_s, __pyx_v_filepath); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "recommend.pyx":31
+  /* "recommend.pyx":30
  * 
  *     # create utility tensor:
  *     utility_tensor = {}             # <<<<<<<<<<<<<<
  *     for i in range(num_patients):
  *         patient = dataset['Patients'][i]
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_utility_tensor = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "recommend.pyx":32
+  /* "recommend.pyx":31
  *     # create utility tensor:
  *     utility_tensor = {}
  *     for i in range(num_patients):             # <<<<<<<<<<<<<<
@@ -2260,28 +2265,28 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
   for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
     __pyx_v_i = __pyx_t_15;
 
-    /* "recommend.pyx":33
+    /* "recommend.pyx":32
  *     utility_tensor = {}
  *     for i in range(num_patients):
  *         patient = dataset['Patients'][i]             # <<<<<<<<<<<<<<
  *         pconditions = patient['conditions']
  *         trials = patient['trials']
  */
-    if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 33, __pyx_L1_error) }
+    if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 32, __pyx_L1_error) }
     if (unlikely(__pyx_v_dataset == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 33, __pyx_L1_error)
+      __PYX_ERR(0, 32, __pyx_L1_error)
     }
-    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Patients); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Patients); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_2, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_2, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (!(likely(PyDict_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 33, __pyx_L1_error)
+    if (!(likely(PyDict_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_patient, ((PyObject*)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "recommend.pyx":34
+    /* "recommend.pyx":33
  *     for i in range(num_patients):
  *         patient = dataset['Patients'][i]
  *         pconditions = patient['conditions']             # <<<<<<<<<<<<<<
@@ -2290,15 +2295,15 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
     if (unlikely(__pyx_v_patient == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 34, __pyx_L1_error)
+      __PYX_ERR(0, 33, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_conditions); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_conditions); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 34, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_pconditions, ((PyObject*)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "recommend.pyx":35
+    /* "recommend.pyx":34
  *         patient = dataset['Patients'][i]
  *         pconditions = patient['conditions']
  *         trials = patient['trials']             # <<<<<<<<<<<<<<
@@ -2307,15 +2312,15 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
     if (unlikely(__pyx_v_patient == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 35, __pyx_L1_error)
+      __PYX_ERR(0, 34, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_trials); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_trials); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 35, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 34, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_trials, ((PyObject*)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "recommend.pyx":36
+    /* "recommend.pyx":35
  *         pconditions = patient['conditions']
  *         trials = patient['trials']
  *         remaining_ks = set(range(len(trials)))             # <<<<<<<<<<<<<<
@@ -2324,21 +2329,21 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
     if (unlikely(__pyx_v_trials == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 36, __pyx_L1_error)
+      __PYX_ERR(0, 35, __pyx_L1_error)
     }
-    __pyx_t_12 = PyList_GET_SIZE(__pyx_v_trials); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 36, __pyx_L1_error)
-    __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_12); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __pyx_t_12 = PyList_GET_SIZE(__pyx_v_trials); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 35, __pyx_L1_error)
+    __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_12); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 35, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PySet_New(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __pyx_t_3 = PySet_New(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_XDECREF_SET(__pyx_v_remaining_ks, ((PyObject*)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "recommend.pyx":37
+    /* "recommend.pyx":36
  *         trials = patient['trials']
  *         remaining_ks = set(range(len(trials)))
  *         for j in range(len(pconditions)):             # <<<<<<<<<<<<<<
@@ -2347,14 +2352,14 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
     if (unlikely(__pyx_v_pconditions == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 37, __pyx_L1_error)
+      __PYX_ERR(0, 36, __pyx_L1_error)
     }
-    __pyx_t_12 = PyList_GET_SIZE(__pyx_v_pconditions); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 37, __pyx_L1_error)
+    __pyx_t_12 = PyList_GET_SIZE(__pyx_v_pconditions); if (unlikely(__pyx_t_12 == ((Py_ssize_t)-1))) __PYX_ERR(0, 36, __pyx_L1_error)
     __pyx_t_16 = __pyx_t_12;
     for (__pyx_t_17 = 0; __pyx_t_17 < __pyx_t_16; __pyx_t_17+=1) {
       __pyx_v_j = __pyx_t_17;
 
-      /* "recommend.pyx":38
+      /* "recommend.pyx":37
  *         remaining_ks = set(range(len(trials)))
  *         for j in range(len(pconditions)):
  *             pc_id = pconditions[j]['id']             # <<<<<<<<<<<<<<
@@ -2363,15 +2368,15 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
       if (unlikely(__pyx_v_pconditions == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 38, __pyx_L1_error)
+        __PYX_ERR(0, 37, __pyx_L1_error)
       }
-      __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_pconditions, __pyx_v_j), __pyx_n_u_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_pconditions, __pyx_v_j), __pyx_n_u_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 37, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 38, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 37, __pyx_L1_error)
       __Pyx_XDECREF_SET(__pyx_v_pc_id, ((PyObject*)__pyx_t_3));
       __pyx_t_3 = 0;
 
-      /* "recommend.pyx":39
+      /* "recommend.pyx":38
  *         for j in range(len(pconditions)):
  *             pc_id = pconditions[j]['id']
  *             pc_kind = pconditions[j]['kind']             # <<<<<<<<<<<<<<
@@ -2380,15 +2385,15 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
       if (unlikely(__pyx_v_pconditions == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 39, __pyx_L1_error)
+        __PYX_ERR(0, 38, __pyx_L1_error)
       }
-      __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_pconditions, __pyx_v_j), __pyx_n_u_kind); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 39, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_pconditions, __pyx_v_j), __pyx_n_u_kind); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 39, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 38, __pyx_L1_error)
       __Pyx_XDECREF_SET(__pyx_v_pc_kind, ((PyObject*)__pyx_t_3));
       __pyx_t_3 = 0;
 
-      /* "recommend.pyx":40
+      /* "recommend.pyx":39
  *             pc_id = pconditions[j]['id']
  *             pc_kind = pconditions[j]['kind']
  *             previous_success = 0.0             # <<<<<<<<<<<<<<
@@ -2397,19 +2402,19 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
       __pyx_v_previous_success = 0.0;
 
-      /* "recommend.pyx":41
+      /* "recommend.pyx":40
  *             pc_kind = pconditions[j]['kind']
  *             previous_success = 0.0
  *             matching_ks = set()             # <<<<<<<<<<<<<<
  *             for k in remaining_ks:
  *                 tr_pc_id = trials[k]['condition']
  */
-      __pyx_t_3 = PySet_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 41, __pyx_L1_error)
+      __pyx_t_3 = PySet_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_XDECREF_SET(__pyx_v_matching_ks, ((PyObject*)__pyx_t_3));
       __pyx_t_3 = 0;
 
-      /* "recommend.pyx":42
+      /* "recommend.pyx":41
  *             previous_success = 0.0
  *             matching_ks = set()
  *             for k in remaining_ks:             # <<<<<<<<<<<<<<
@@ -2417,7 +2422,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  *                 if pc_id == tr_pc_id:
  */
       __pyx_t_18 = 0;
-      __pyx_t_2 = __Pyx_set_iterator(__pyx_v_remaining_ks, 1, (&__pyx_t_19), (&__pyx_t_20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_set_iterator(__pyx_v_remaining_ks, 1, (&__pyx_t_19), (&__pyx_t_20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 41, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_XDECREF(__pyx_t_3);
       __pyx_t_3 = __pyx_t_2;
@@ -2425,13 +2430,13 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
       while (1) {
         __pyx_t_21 = __Pyx_set_iter_next(__pyx_t_3, __pyx_t_19, &__pyx_t_18, &__pyx_t_2, __pyx_t_20);
         if (unlikely(__pyx_t_21 == 0)) break;
-        if (unlikely(__pyx_t_21 == -1)) __PYX_ERR(0, 42, __pyx_L1_error)
+        if (unlikely(__pyx_t_21 == -1)) __PYX_ERR(0, 41, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_22 = __Pyx_PyInt_As_size_t(__pyx_t_2); if (unlikely((__pyx_t_22 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 42, __pyx_L1_error)
+        __pyx_t_22 = __Pyx_PyInt_As_size_t(__pyx_t_2); if (unlikely((__pyx_t_22 == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 41, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_v_k = __pyx_t_22;
 
-        /* "recommend.pyx":43
+        /* "recommend.pyx":42
  *             matching_ks = set()
  *             for k in remaining_ks:
  *                 tr_pc_id = trials[k]['condition']             # <<<<<<<<<<<<<<
@@ -2440,26 +2445,26 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
         if (unlikely(__pyx_v_trials == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 43, __pyx_L1_error)
+          __PYX_ERR(0, 42, __pyx_L1_error)
         }
-        __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_trials, __pyx_v_k), __pyx_n_u_condition); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 43, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_trials, __pyx_v_k), __pyx_n_u_condition); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_2)->tp_name), 0))) __PYX_ERR(0, 43, __pyx_L1_error)
+        if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_2)->tp_name), 0))) __PYX_ERR(0, 42, __pyx_L1_error)
         __Pyx_XDECREF_SET(__pyx_v_tr_pc_id, ((PyObject*)__pyx_t_2));
         __pyx_t_2 = 0;
 
-        /* "recommend.pyx":44
+        /* "recommend.pyx":43
  *             for k in remaining_ks:
  *                 tr_pc_id = trials[k]['condition']
  *                 if pc_id == tr_pc_id:             # <<<<<<<<<<<<<<
  *                     tr_th_id = trials[k]['therapy']
  *                     new_success = int(trials[k]['successful'].strip('%')) * 0.01
  */
-        __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_v_pc_id, __pyx_v_tr_pc_id, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 44, __pyx_L1_error)
+        __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_v_pc_id, __pyx_v_tr_pc_id, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 43, __pyx_L1_error)
         __pyx_t_4 = (__pyx_t_11 != 0);
         if (__pyx_t_4) {
 
-          /* "recommend.pyx":45
+          /* "recommend.pyx":44
  *                 tr_pc_id = trials[k]['condition']
  *                 if pc_id == tr_pc_id:
  *                     tr_th_id = trials[k]['therapy']             # <<<<<<<<<<<<<<
@@ -2468,15 +2473,15 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
           if (unlikely(__pyx_v_trials == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-            __PYX_ERR(0, 45, __pyx_L1_error)
+            __PYX_ERR(0, 44, __pyx_L1_error)
           }
-          __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_trials, __pyx_v_k), __pyx_n_u_therapy); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_trials, __pyx_v_k), __pyx_n_u_therapy); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_2)->tp_name), 0))) __PYX_ERR(0, 45, __pyx_L1_error)
+          if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_2)->tp_name), 0))) __PYX_ERR(0, 44, __pyx_L1_error)
           __Pyx_XDECREF_SET(__pyx_v_tr_th_id, ((PyObject*)__pyx_t_2));
           __pyx_t_2 = 0;
 
-          /* "recommend.pyx":46
+          /* "recommend.pyx":45
  *                 if pc_id == tr_pc_id:
  *                     tr_th_id = trials[k]['therapy']
  *                     new_success = int(trials[k]['successful'].strip('%')) * 0.01             # <<<<<<<<<<<<<<
@@ -2485,11 +2490,11 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
           if (unlikely(__pyx_v_trials == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-            __PYX_ERR(0, 46, __pyx_L1_error)
+            __PYX_ERR(0, 45, __pyx_L1_error)
           }
-          __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_trials, __pyx_v_k), __pyx_n_u_successful); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
+          __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(PyList_GET_ITEM(__pyx_v_trials, __pyx_v_k), __pyx_n_u_successful); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_strip); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 46, __pyx_L1_error)
+          __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_strip); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 45, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_6);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_1 = NULL;
@@ -2504,47 +2509,47 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
           }
           __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_Call2Args(__pyx_t_6, __pyx_t_1, __pyx_kp_u__2) : __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_kp_u__2);
           __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-          __pyx_t_6 = __Pyx_PyNumber_Int(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 46, __pyx_L1_error)
+          __pyx_t_6 = __Pyx_PyNumber_Int(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 45, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_6);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_2 = PyNumber_Multiply(__pyx_t_6, __pyx_float_0_01); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+          __pyx_t_2 = PyNumber_Multiply(__pyx_t_6, __pyx_float_0_01); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-          __pyx_t_23 = __pyx_PyFloat_AsFloat(__pyx_t_2); if (unlikely((__pyx_t_23 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L1_error)
+          __pyx_t_23 = __pyx_PyFloat_AsFloat(__pyx_t_2); if (unlikely((__pyx_t_23 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_v_new_success = __pyx_t_23;
 
-          /* "recommend.pyx":47
+          /* "recommend.pyx":46
  *                     tr_th_id = trials[k]['therapy']
  *                     new_success = int(trials[k]['successful'].strip('%')) * 0.01
  *                     utility_tensor[i, int(pc_kind.strip('Cond')) - 1, int(tr_th_id.strip('Th')) - 1] = new_success - previous_success             # <<<<<<<<<<<<<<
  *                     previous_success = new_success
  *                     matching_ks.add(k)
  */
-          __pyx_t_2 = PyFloat_FromDouble((__pyx_v_new_success - __pyx_v_previous_success)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_2 = PyFloat_FromDouble((__pyx_v_new_success - __pyx_v_previous_success)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_6 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_6 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_1 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PyUnicode_Type_strip, __pyx_v_pc_kind, __pyx_n_u_Cond); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_1 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PyUnicode_Type_strip, __pyx_v_pc_kind, __pyx_n_u_Cond); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_24 = __Pyx_PyNumber_Int(__pyx_t_1); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_24 = __Pyx_PyNumber_Int(__pyx_t_1); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_24);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-          __pyx_t_1 = __Pyx_PyInt_SubtractObjC(__pyx_t_24, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_1 = __Pyx_PyInt_SubtractObjC(__pyx_t_24, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_24); __pyx_t_24 = 0;
-          __pyx_t_24 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PyUnicode_Type_strip, __pyx_v_tr_th_id, __pyx_n_u_Th); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_24 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PyUnicode_Type_strip, __pyx_v_tr_th_id, __pyx_n_u_Th); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_24);
-          __pyx_t_25 = __Pyx_PyNumber_Int(__pyx_t_24); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_25 = __Pyx_PyNumber_Int(__pyx_t_24); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_25);
           __Pyx_DECREF(__pyx_t_24); __pyx_t_24 = 0;
-          __pyx_t_24 = __Pyx_PyInt_SubtractObjC(__pyx_t_25, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_24 = __Pyx_PyInt_SubtractObjC(__pyx_t_25, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_24);
           __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
-          __pyx_t_25 = PyTuple_New(3); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 47, __pyx_L1_error)
+          __pyx_t_25 = PyTuple_New(3); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_25);
           __Pyx_GIVEREF(__pyx_t_6);
           PyTuple_SET_ITEM(__pyx_t_25, 0, __pyx_t_6);
@@ -2555,11 +2560,11 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
           __pyx_t_6 = 0;
           __pyx_t_1 = 0;
           __pyx_t_24 = 0;
-          if (unlikely(PyDict_SetItem(__pyx_v_utility_tensor, __pyx_t_25, __pyx_t_2) < 0)) __PYX_ERR(0, 47, __pyx_L1_error)
+          if (unlikely(PyDict_SetItem(__pyx_v_utility_tensor, __pyx_t_25, __pyx_t_2) < 0)) __PYX_ERR(0, 46, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-          /* "recommend.pyx":48
+          /* "recommend.pyx":47
  *                     new_success = int(trials[k]['successful'].strip('%')) * 0.01
  *                     utility_tensor[i, int(pc_kind.strip('Cond')) - 1, int(tr_th_id.strip('Th')) - 1] = new_success - previous_success
  *                     previous_success = new_success             # <<<<<<<<<<<<<<
@@ -2568,19 +2573,19 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
  */
           __pyx_v_previous_success = __pyx_v_new_success;
 
-          /* "recommend.pyx":49
+          /* "recommend.pyx":48
  *                     utility_tensor[i, int(pc_kind.strip('Cond')) - 1, int(tr_th_id.strip('Th')) - 1] = new_success - previous_success
  *                     previous_success = new_success
  *                     matching_ks.add(k)             # <<<<<<<<<<<<<<
  *             remaining_ks = remaining_ks.difference(matching_ks)
  *     print('-> Created raw utility tensor')
  */
-          __pyx_t_2 = __Pyx_PyInt_FromSize_t(__pyx_v_k); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyInt_FromSize_t(__pyx_v_k); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 48, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_26 = PySet_Add(__pyx_v_matching_ks, __pyx_t_2); if (unlikely(__pyx_t_26 == ((int)-1))) __PYX_ERR(0, 49, __pyx_L1_error)
+          __pyx_t_26 = PySet_Add(__pyx_v_matching_ks, __pyx_t_2); if (unlikely(__pyx_t_26 == ((int)-1))) __PYX_ERR(0, 48, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-          /* "recommend.pyx":44
+          /* "recommend.pyx":43
  *             for k in remaining_ks:
  *                 tr_pc_id = trials[k]['condition']
  *                 if pc_id == tr_pc_id:             # <<<<<<<<<<<<<<
@@ -2591,64 +2596,198 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "recommend.pyx":50
+      /* "recommend.pyx":49
  *                     previous_success = new_success
  *                     matching_ks.add(k)
  *             remaining_ks = remaining_ks.difference(matching_ks)             # <<<<<<<<<<<<<<
  *     print('-> Created raw utility tensor')
- * 
+ *     print(list(utility_tensor.items())[300:310]) # TODO debug
  */
-      __pyx_t_3 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PySet_Type_difference, __pyx_v_remaining_ks, __pyx_v_matching_ks); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PySet_Type_difference, __pyx_v_remaining_ks, __pyx_v_matching_ks); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (!(likely(PySet_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "set", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 50, __pyx_L1_error)
+      if (!(likely(PySet_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "set", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 49, __pyx_L1_error)
       __Pyx_DECREF_SET(__pyx_v_remaining_ks, ((PyObject*)__pyx_t_3));
       __pyx_t_3 = 0;
     }
   }
 
-  /* "recommend.pyx":51
+  /* "recommend.pyx":50
  *                     matching_ks.add(k)
  *             remaining_ks = remaining_ks.difference(matching_ks)
  *     print('-> Created raw utility tensor')             # <<<<<<<<<<<<<<
+ *     print(list(utility_tensor.items())[300:310]) # TODO debug
  * 
- *     # patient similarites:
  */
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "recommend.pyx":51
+ *             remaining_ks = remaining_ks.difference(matching_ks)
+ *     print('-> Created raw utility tensor')
+ *     print(list(utility_tensor.items())[300:310]) # TODO debug             # <<<<<<<<<<<<<<
+ * 
+ *     # arguments' values TODO:
+ */
+  __pyx_t_3 = __Pyx_PyDict_Items(__pyx_v_utility_tensor); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = PySequence_List(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyList_GetSlice(__pyx_t_2, 0x12C, 0x136); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "recommend.pyx":54
+ * 
+ *     # arguments' values TODO:
+ *     patient = dataset['Patients'][int(arg_patient_id) - 1]             # <<<<<<<<<<<<<<
+ *     pconditions = patient['conditions']
+ *     trials = patient['trials']
+ */
+  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 54, __pyx_L1_error) }
+  if (unlikely(__pyx_v_dataset == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 54, __pyx_L1_error)
+  }
+  __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Patients); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyNumber_Int(__pyx_v_arg_patient_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_25 = __Pyx_PyInt_SubtractObjC(__pyx_t_3, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_25);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_t_25); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
+  if (!(likely(PyDict_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "dict", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_XDECREF_SET(__pyx_v_patient, ((PyObject*)__pyx_t_3));
+  __pyx_t_3 = 0;
 
   /* "recommend.pyx":55
- *     # patient similarites:
- *     # TODO thexash?
- *     print(list(utility_tensor.items())[:100]) # nee             # <<<<<<<<<<<<<<
- * 
- *     # finish:
+ *     # arguments' values TODO:
+ *     patient = dataset['Patients'][int(arg_patient_id) - 1]
+ *     pconditions = patient['conditions']             # <<<<<<<<<<<<<<
+ *     trials = patient['trials']
+ *     assert arg_patient_id == patient['id']
  */
-  __pyx_t_3 = __Pyx_PyDict_Items(__pyx_v_utility_tensor); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
+  if (unlikely(__pyx_v_patient == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 55, __pyx_L1_error)
+  }
+  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_conditions); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = PySequence_List(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyList_GetSlice(__pyx_t_2, 0, 0x64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
+  if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_XDECREF_SET(__pyx_v_pconditions, ((PyObject*)__pyx_t_3));
+  __pyx_t_3 = 0;
+
+  /* "recommend.pyx":56
+ *     patient = dataset['Patients'][int(arg_patient_id) - 1]
+ *     pconditions = patient['conditions']
+ *     trials = patient['trials']             # <<<<<<<<<<<<<<
+ *     assert arg_patient_id == patient['id']
+ *     condition = dataset['Conditions'][int(arg_pc_kind.strip('Cond')) - 1]
+ */
+  if (unlikely(__pyx_v_patient == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 56, __pyx_L1_error)
+  }
+  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_trials); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 56, __pyx_L1_error)
+  __Pyx_XDECREF_SET(__pyx_v_trials, ((PyObject*)__pyx_t_3));
+  __pyx_t_3 = 0;
+
+  /* "recommend.pyx":57
+ *     pconditions = patient['conditions']
+ *     trials = patient['trials']
+ *     assert arg_patient_id == patient['id']             # <<<<<<<<<<<<<<
+ *     condition = dataset['Conditions'][int(arg_pc_kind.strip('Cond')) - 1]
+ *     assert arg_pc_kind == condition['id']
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(!Py_OptimizeFlag)) {
+    if (unlikely(__pyx_v_patient == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      __PYX_ERR(0, 57, __pyx_L1_error)
+    }
+    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_patient, __pyx_n_u_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 57, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_arg_patient_id, __pyx_t_3, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 57, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_4)) {
+      PyErr_SetNone(PyExc_AssertionError);
+      __PYX_ERR(0, 57, __pyx_L1_error)
+    }
+  }
+  #endif
 
   /* "recommend.pyx":58
+ *     trials = patient['trials']
+ *     assert arg_patient_id == patient['id']
+ *     condition = dataset['Conditions'][int(arg_pc_kind.strip('Cond')) - 1]             # <<<<<<<<<<<<<<
+ *     assert arg_pc_kind == condition['id']
+ * 
+ */
+  if (unlikely(!__pyx_v_dataset)) { __Pyx_RaiseUnboundLocalError("dataset"); __PYX_ERR(0, 58, __pyx_L1_error) }
+  if (unlikely(__pyx_v_dataset == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+    __PYX_ERR(0, 58, __pyx_L1_error)
+  }
+  __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_dataset, __pyx_n_u_Conditions); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_25 = __Pyx_CallUnboundCMethod1(&__pyx_umethod_PyUnicode_Type_strip, __pyx_v_arg_pc_kind, __pyx_n_u_Cond); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_25);
+  __pyx_t_2 = __Pyx_PyNumber_Int(__pyx_t_25); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
+  __pyx_t_25 = __Pyx_PyInt_SubtractObjC(__pyx_t_2, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_25);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_25); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_25); __pyx_t_25 = 0;
+  __pyx_v_condition = __pyx_t_2;
+  __pyx_t_2 = 0;
+
+  /* "recommend.pyx":59
+ *     assert arg_patient_id == patient['id']
+ *     condition = dataset['Conditions'][int(arg_pc_kind.strip('Cond')) - 1]
+ *     assert arg_pc_kind == condition['id']             # <<<<<<<<<<<<<<
+ * 
+ *     # patient similarites:
+ */
+  #ifndef CYTHON_WITHOUT_ASSERTIONS
+  if (unlikely(!Py_OptimizeFlag)) {
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_condition, __pyx_n_u_id); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_arg_pc_kind, __pyx_t_2, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 59, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_4)) {
+      PyErr_SetNone(PyExc_AssertionError);
+      __PYX_ERR(0, 59, __pyx_L1_error)
+    }
+  }
+  #endif
+
+  /* "recommend.pyx":66
  * 
  *     # finish:
  *     print('Everything okay!')             # <<<<<<<<<<<<<<
  *     return 0
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "recommend.pyx":59
+  /* "recommend.pyx":67
  *     # finish:
  *     print('Everything okay!')
  *     return 0             # <<<<<<<<<<<<<<
@@ -2658,10 +2797,10 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "recommend.pyx":12
+  /* "recommend.pyx":11
  * 
  * 
- * cdef int main(str filepath, str patient_id, str pcondition_kind):             # <<<<<<<<<<<<<<
+ * cdef int main(str filepath, str arg_patient_id, str arg_pc_kind):             # <<<<<<<<<<<<<<
  *     cdef:
  *         size_t i, j, k, num_patients, num_conditions, num_therapies
  */
@@ -2689,6 +2828,7 @@ static int __pyx_f_9recommend_main(PyObject *__pyx_v_filepath, CYTHON_UNUSED PyO
   __Pyx_XDECREF(__pyx_v_dataset);
   __Pyx_XDECREF(__pyx_v_patient);
   __Pyx_XDECREF(__pyx_v_f);
+  __Pyx_XDECREF(__pyx_v_condition);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -3804,9 +3944,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 23, __pyx_L1_error)
-  __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 28, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 31, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 945, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -3817,36 +3957,36 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "recommend.pyx":23
+  /* "recommend.pyx":22
  *     # parse dataset:
  *     assert os.path.exists(filepath)
  *     with open(filepath, 'r', encoding='utf-8') as f:             # <<<<<<<<<<<<<<
  *         dataset = json.load(f)
  *     num_patients = len(dataset['Patients'])
  */
-  __pyx_tuple_ = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "recommend.pyx":51
+  /* "recommend.pyx":50
  *                     matching_ks.add(k)
  *             remaining_ks = remaining_ks.difference(matching_ks)
  *     print('-> Created raw utility tensor')             # <<<<<<<<<<<<<<
+ *     print(list(utility_tensor.items())[300:310]) # TODO debug
  * 
- *     # patient similarites:
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_Created_raw_utility_tensor); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_Created_raw_utility_tensor); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "recommend.pyx":58
+  /* "recommend.pyx":66
  * 
  *     # finish:
  *     print('Everything okay!')             # <<<<<<<<<<<<<<
  *     return 0
  * 
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Everything_okay); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Everything_okay); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
@@ -4259,20 +4399,20 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "recommend.pyx":62
+  /* "recommend.pyx":70
  * 
  * 
  * if __name__ == '__main__':             # <<<<<<<<<<<<<<
  *     assert len(sys.argv) == 4
  *     main(sys.argv[1], sys.argv[2], sys.argv[3])
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_n_u_main, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_n_u_main, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "recommend.pyx":63
+    /* "recommend.pyx":71
  * 
  * if __name__ == '__main__':
  *     assert len(sys.argv) == 4             # <<<<<<<<<<<<<<
@@ -4280,58 +4420,58 @@ if (!__Pyx_RefNanny) {
  */
     #ifndef CYTHON_WITHOUT_ASSERTIONS
     if (unlikely(!Py_OptimizeFlag)) {
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_sys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_sys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_argv); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_argv); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 71, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_4 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 63, __pyx_L1_error)
+      __pyx_t_4 = PyObject_Length(__pyx_t_3); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 71, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       if (unlikely(!((__pyx_t_4 == 4) != 0))) {
         PyErr_SetNone(PyExc_AssertionError);
-        __PYX_ERR(0, 63, __pyx_L1_error)
+        __PYX_ERR(0, 71, __pyx_L1_error)
       }
     }
     #endif
 
-    /* "recommend.pyx":64
+    /* "recommend.pyx":72
  * if __name__ == '__main__':
  *     assert len(sys.argv) == 4
  *     main(sys.argv[1], sys.argv[2], sys.argv[3])             # <<<<<<<<<<<<<<
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_sys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_sys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_argv); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_argv); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_1, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_1, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_sys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 72, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_sys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_argv); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_argv); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_5, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_5, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_sys); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 72, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_sys); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_argv); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_argv); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_6, 3, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_6, 3, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 64, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 72, __pyx_L1_error)
     (void)(__pyx_f_9recommend_main(((PyObject*)__pyx_t_3), ((PyObject*)__pyx_t_1), ((PyObject*)__pyx_t_5)));
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "recommend.pyx":62
+    /* "recommend.pyx":70
  * 
  * 
  * if __name__ == '__main__':             # <<<<<<<<<<<<<<
@@ -5549,6 +5689,35 @@ static CYTHON_INLINE PyObject* __Pyx_PyTuple_GetSlice(
         ((PyTupleObject*)dest)->ob_item,
         length);
     return dest;
+}
+#endif
+
+/* ObjectGetItem */
+#if CYTHON_USE_TYPE_SLOTS
+static PyObject *__Pyx_PyObject_GetIndex(PyObject *obj, PyObject* index) {
+    PyObject *runerr;
+    Py_ssize_t key_value;
+    PySequenceMethods *m = Py_TYPE(obj)->tp_as_sequence;
+    if (unlikely(!(m && m->sq_item))) {
+        PyErr_Format(PyExc_TypeError, "'%.200s' object is not subscriptable", Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
+    key_value = __Pyx_PyIndex_AsSsize_t(index);
+    if (likely(key_value != -1 || !(runerr = PyErr_Occurred()))) {
+        return __Pyx_GetItemInt_Fast(obj, key_value, 0, 1, 1);
+    }
+    if (PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
+        PyErr_Clear();
+        PyErr_Format(PyExc_IndexError, "cannot fit '%.200s' into an index-sized integer", Py_TYPE(index)->tp_name);
+    }
+    return NULL;
+}
+static PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject* key) {
+    PyMappingMethods *m = Py_TYPE(obj)->tp_as_mapping;
+    if (likely(m && m->mp_subscript)) {
+        return m->mp_subscript(obj, key);
+    }
+    return __Pyx_PyObject_GetIndex(obj, key);
 }
 #endif
 

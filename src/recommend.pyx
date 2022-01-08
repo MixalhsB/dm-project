@@ -6,10 +6,9 @@ import json
 import numpy as np
 cimport cython
 cimport numpy as np
-from libc.stdlib cimport malloc, free
 
 
-cdef int main(str filepath, str patient_id, str pcondition_kind):
+cdef int main(str filepath, str arg_patient_id, str arg_pc_kind):
     cdef:
         size_t i, j, k, num_patients, num_conditions, num_therapies
         float previous_success, new_success
@@ -49,10 +48,19 @@ cdef int main(str filepath, str patient_id, str pcondition_kind):
                     matching_ks.add(k)
             remaining_ks = remaining_ks.difference(matching_ks)
     print('-> Created raw utility tensor')
+    print(list(utility_tensor.items())[300:310]) # TODO debug
+
+    # arguments' values TODO:
+    patient = dataset['Patients'][int(arg_patient_id) - 1]
+    pconditions = patient['conditions']
+    trials = patient['trials']
+    assert arg_patient_id == patient['id']
+    condition = dataset['Conditions'][int(arg_pc_kind.strip('Cond')) - 1]
+    assert arg_pc_kind == condition['id']
 
     # patient similarites:
     # TODO thexash?
-    print(list(utility_tensor.items())[:100]) # nee
+    pass
 
     # finish:
     print('Everything okay!')
