@@ -3,19 +3,32 @@
 import os
 import sys
 import json
+import itertools
 import numpy as np
 cimport cython
 cimport numpy as np
 
 
+cdef dict get_patient_matrix(str patient_id, dict utility_tensor, np.ndarray utility_tensor_index):
+    cdef:
+        size_t x, y, z, start, end
+
+    x = int(patient_id) - 1
+    start = utility_tensor_index[x, 0]
+    end = utility_tensor_index[x, 1]
+
+    return {(y, z): utility_tensor[x, y, z] for x, y, z in itertools.islice(utility_tensor, start, end)}
+
+
 cdef int main(str filepath, str arg_patient_id, str arg_pc_kind):
     cdef:
-        size_t i, j, k, num_patients, num_conditions, num_therapies
+        size_t i, j, k, x, y, z, index_count_start, index_count_current, num_patients, num_conditions, num_therapies
         float previous_success, new_success
         str pc_id, pc_kind, tr_pc_id, tr_th_id
         set remaining_ks, matching_ks
         list pconditions, trials
-        dict utility_tensor, dataset, patient
+        dict dataset, patient, utility_tensor
+        np.ndarray utility_tensor_index
 
     # parse dataset:
     assert os.path.exists(filepath)
@@ -28,27 +41,39 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_kind):
 
     # create utility tensor:
     utility_tensor = {}
-    for i in range(num_patients):
+    utility_tensor_index = np.empty((num_patients, 2), dtype=np.uintc)
+    index_count_start = 0
+    index_count_current = 0
+    for i in range(num_patients): # iterate over patients
         patient = dataset['Patients'][i]
         pconditions = patient['conditions']
         trials = patient['trials']
         remaining_ks = set(range(len(trials)))
-        for j in range(len(pconditions)):
+        for j in range(len(pconditions)): # iterate over patient's conditions
             pc_id = pconditions[j]['id']
             pc_kind = pconditions[j]['kind']
             previous_success = 0.0
             matching_ks = set()
-            for k in remaining_ks:
+            for k in remaining_ks: # efficiently iterate over corresponding trials
                 tr_pc_id = trials[k]['condition']
                 if pc_id == tr_pc_id:
                     tr_th_id = trials[k]['therapy']
                     new_success = int(trials[k]['successful'].strip('%')) * 0.01
-                    utility_tensor[i, int(pc_kind.strip('Cond')) - 1, int(tr_th_id.strip('Th')) - 1] = new_success - previous_success
+                    x, y, z = i, int(pc_kind.strip('Cond')) - 1, int(tr_th_id.strip('Th')) - 1
+                    if (x, y, z) not in utility_tensor:
+                        utility_tensor[x, y ,z] = new_success - previous_success
+                        index_count_current += 1
+                    else: # in the past, same patient already had same therapy for same kind of condition; avg. biased towards later instances
+                        utility_tensor[x, y, z] = (new_success - previous_success + utility_tensor[x, y, z]) / 2
                     previous_success = new_success
                     matching_ks.add(k)
             remaining_ks = remaining_ks.difference(matching_ks)
+        utility_tensor_index[i, 0] = index_count_start
+        utility_tensor_index[i, 1] = index_count_current
+        index_count_start = index_count_current
     print('-> Created raw utility tensor')
-    print(list(utility_tensor.items())[300:310]) # TODO debug
+    #print(list(utility_tensor.items())[300:310]) # TODO debug
+    #print(list(enumerate(utility_tensor_index[:200])))
 
     # arguments' values TODO:
     patient = dataset['Patients'][int(arg_patient_id) - 1]
@@ -60,10 +85,12 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_kind):
 
     # patient similarites:
     # TODO thexash?
-    pass
+    # now first: feature-agnostic collaborative filtering (baseline)
+    print(get_patient_matrix(arg_patient_id, utility_tensor, utility_tensor_index))
 
     # finish:
     print('Everything okay!')
+
     return 0
 
 
