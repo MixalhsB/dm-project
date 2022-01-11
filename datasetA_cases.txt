@@ -1,0 +1,4 @@
+PatientID	Patient Condition
+7604		pc40874
+10869		pc58329
+59163		pc318106
