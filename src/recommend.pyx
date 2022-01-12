@@ -84,7 +84,7 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
     medoids = sample[results[best_i][1].medoids]
     patients_to_clusters = np.empty(num_patients, dtype=np.uintc)
     for j in range(s):
-        patients_to_clusters[sample[j]] = results[best_i][1].medoids[results[best_i][1].labels[j]]
+        patients_to_clusters[sample[j]] = medoids[results[best_i][1].labels[j]]
     print()
     for i in range(num_patients):
         if i in sample: # patients from winning sample have already been assigned, including all medoids
@@ -112,6 +112,41 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
     return patients_to_clusters
 
 
+cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_clusters):
+    cdef:
+        size_t i, med, y, z, num_clustered_patients
+        dict condensed_utility_tensor, agglomerated_utility_tensor, patient_matrix
+
+    agglomerated_utility_tensor = {}
+    condensed_utility_tensor = {}
+    for i in range(patients_to_clusters.size): # a.k.a. range(num_patients)
+        med = patients_to_clusters[i]
+        if med not in agglomerated_utility_tensor:
+            agglomerated_utility_tensor[med] = [utility_tensor[i]]
+        else:
+            agglomerated_utility_tensor[med].append(utility_tensor[i])
+    for med in agglomerated_utility_tensor: # sum patient-specific utilities
+        for patient_matrix in agglomerated_utility_tensor[med]:
+            for y in patient_matrix:
+                for z in patient_matrix[y]:
+                    if med not in condensed_utility_tensor:
+                        condensed_utility_tensor[med] = {y: {z: patient_matrix[y][z]}}
+                    elif y not in condensed_utility_tensor[med]:
+                        condensed_utility_tensor[med][y] = {z: patient_matrix[y][z]}
+                    elif z not in condensed_utility_tensor[med][y]:
+                        condensed_utility_tensor[med][y][z] = patient_matrix[y][z]
+                    else:
+                        condensed_utility_tensor[med][y][z] += patient_matrix[y][z]
+    for med in condensed_utility_tensor: # average patient-specific utilities
+        num_clustered_patients = len(agglomerated_utility_tensor[med])
+        for y in condensed_utility_tensor[med]:
+            for z in condensed_utility_tensor[med][y]:
+                condensed_utility_tensor[med][y][z] /= num_clustered_patients
+    print('-> Computed condensed utility tensor')
+
+    return condensed_utility_tensor
+
+
 cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         size_t i, j, k, x, y, z, num_patients, num_conditions, num_therapies
@@ -119,7 +154,7 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
         str filename, pc_id, pc_kind, tr_pc_id, tr_th_id
         set remaining_ks, matching_ks
         list pconditions, trials
-        dict dataset, patient, pcond, condition, utility_tensor
+        dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
         np.ndarray patients_to_clusters
 
     # parse dataset:
@@ -127,8 +162,8 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     with open(filepath, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
     num_patients = len(dataset['Patients'])
-    num_conditions = len(dataset['Conditions'])
-    num_therapies = len(dataset['Therapies'])
+    num_conditions = len(dataset['Conditions']) # TODO redundant?
+    num_therapies = len(dataset['Therapies']) # TODO redundant?
     filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
     print('-> Successfully parsed ' + filename)
 
@@ -178,7 +213,11 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     # TODO thexash?
     # now first: feature-agnostic collaborative filtering (baseline)
     patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath)
-    print(patients_to_clusters[:100]) # TODO remove tbc
+    condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters)
+    #pp = pprint.PrettyPrinter(indent=4)
+    #pp.pprint(condensed_utility_tensor)
+    #print('number of medoids:', len(list(condensed_utility_tensor.keys())))
+    #print(sorted(condensed_utility_tensor.keys()))
 
     # finish:
     print('-> Everything okay!')
