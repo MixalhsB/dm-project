@@ -227,51 +227,81 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
     return condensed_utility_tensor
 
 
-cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str filepath, mode='baseline'):
+cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str filepath, int row=-1, mode='baseline'): # row=-1: full matrix
     cdef:
         size_t i, j, iter_count, med1, med2, num_clusters, num_iterations
-        np.ndarray clusters_dist_matrix
+        np.ndarray clusters_dist_matrix, row_is_precomputed
         str res_dir, filename, dmt_path
 
     res_dir, filename = get_directory_info(filepath)
-    dmt_path = '%s%s_dmt_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
-    if os.path.exists(dmt_path):
-        with open(dmt_path, 'rb') as f:
-            clusters_dist_matrix = pickle.load(f)
-        print("-> Loaded pre-computed clusters' distance matrix from ../" + dmt_path.rsplit('../', 1)[1])
-        return clusters_dist_matrix
-
+    dmt_path = '%s%s_dmt_%s/' % (res_dir, filename.rstrip('.json'), mode)
     num_clusters = len(condensed_utility_tensor)
-    num_iterations = num_clusters * (num_clusters + 1) // 2
     clusters_dist_matrix = np.empty((num_clusters, num_clusters), dtype=float)
+    row_is_precomputed = np.zeros(num_clusters, dtype=bool)
+
+    if os.path.exists(dmt_path):
+        if row >= 0 and os.path.exists(dmt_path + str(row) + '.pickle'):
+            with open(dmt_path + str(row) + '.pickle', 'rb') as f:
+                clusters_dist_matrix[row] = pickle.load(f)
+            print("-> Loaded pre-computed clusters' distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+            return clusters_dist_matrix[row]
+
+        for i in range(num_clusters):
+            if os.path.exists(dmt_path + str(i) + '.pickle'):
+                with open(dmt_path + str(i) + '.pickle', 'rb') as f:
+                    clusters_dist_matrix[i] = pickle.load(f)
+                    row_is_precomputed[i] = True
+        if np.all(row_is_precomputed):
+            assert row == -1
+            print("-> Loaded full clusters' distance matrix from ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
+            return clusters_dist_matrix
+
+    num_iterations = num_clusters if row >= 0 else num_clusters * (num_clusters + 1) // 2
     iter_count = 0
     for i, med1 in enumerate(condensed_utility_tensor):
+        if row >= 0 and i != row or row_is_precomputed[i]:
+            continue
         for j, med2 in enumerate(condensed_utility_tensor):
-            if i > j:
+            if row == -1 and i > j:
                 continue
             iter_count += 1
             print('-> Computing cosine distances between clusters', iter_count, '/', num_iterations, '...', end='\r')
             if i == j:
                 clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = 0.0
+            elif row_is_precomputed[j]:
+                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i]
             else:
                 clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = cosine_distance(med1, med2, condensed_utility_tensor)
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
-    with open(dmt_path, 'wb') as f:
-        pickle.dump(clusters_dist_matrix, f)
-    print("\n-> Saved clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1])
+    if not os.path.exists(dmt_path):
+        os.mkdir(dmt_path)
+    if row >= 0:
+        with open(dmt_path + str(row) + '.pickle', 'wb') as f:
+            pickle.dump(clusters_dist_matrix[row], f)
+        print("\n-> Saved clusters' distance vector to ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+    else:
+        for i in range(num_clusters):
+            with open(dmt_path + str(i) + '.pickle', 'wb') as f:
+                pickle.dump(clusters_dist_matrix[i], f)
+        print("\n-> Saved full clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
 
-    return clusters_dist_matrix
+    return clusters_dist_matrix[row] if row >= 0 else clusters_dist_matrix
 
 
-cdef np.ndarray recommend(dict patient, dict pcond, dict condition, dict condensed_utility_tensor, np.ndarray patients_to_clusters, np.ndarray clusters_dist_matrix):
+cdef np.ndarray recommend(dict patient, dict pcond, dict condition, dict condensed_utility_tensor, np.ndarray patients_to_clusters, str filepath):
     cdef:
-        np.ndarray recommendations
+        size_t med, row
+        np.ndarray clusters_dist_vector, recommendations
 
+    med = patients_to_clusters[int(patient['id']) - 1]
+    row = list(condensed_utility_tensor).index(med)
+    clusters_dist_vector = get_clusters_distance_matrix(condensed_utility_tensor, filepath, row=row)
+    # TODO tbc
     recommendations = np.empty(5, dtype=object)
-    print(condensed_utility_tensor[patients_to_clusters[int(patient['id']) - 1]][int(condition['id'].lstrip('Cond')) - 1])
-    # TODO something with super-condensed and/or clusters_dist_matrix, literally
+    print(condensed_utility_tensor[med][int(condition['id'].lstrip('Cond')) - 1])
+    # TODO something with clusters_dist_matrix, literally
 
     return recommendations
 
@@ -297,9 +327,8 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     utility_tensor = get_raw_utilities(dataset, filepath)
     patients_to_clusters = cluster_patients(utility_tensor, len(dataset['Patients']), 100, 5, 500, filepath)
     condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath)
-    clusters_dist_matrix = get_clusters_distance_matrix(condensed_utility_tensor, filepath)
-    recommend(patient, pcond, condition, condensed_utility_tensor, patients_to_clusters, clusters_dist_matrix) # TODO debug
-    print(clusters_dist_matrix)
+    clusters_dist_matrix = get_clusters_distance_matrix(condensed_utility_tensor, filepath) # TODO don't need!
+    recommend(patient, pcond, condition, condensed_utility_tensor, patients_to_clusters, filepath) # TODO debug
     print('-> Everything okay!')
 
     return 0
