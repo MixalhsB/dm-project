@@ -19,9 +19,7 @@ cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_
 
     patient_matrix_1 = utility_tensor[patient_x_1]
     patient_matrix_2 = utility_tensor[patient_x_2]
-    dot_product = 0.0
-    sum_squares_1 = 0.0
-    sum_squares_2 = 0.0
+    dot_product = sum_squares_1 = sum_squares_2 = 0.0
     for i, y1 in enumerate(patient_matrix_1):
         for j, z1 in enumerate(patient_matrix_1[y1]):
             value_1 = patient_matrix_1[y1][z1]
@@ -56,58 +54,60 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
     data_dir, filename = filepath_split
     res_dir = data_dir + '/../results/'
     p2c_path = '%s%s_p2c_%d_%d_%d.pickle' % (res_dir, filename.rstrip('.json'), k, n, s)
+
     if os.path.exists(p2c_path):
         with open(p2c_path, 'rb') as f:
             patients_to_clusters = pickle.load(f)
-            print('-> Loaded pre-computed clusters from ../' + p2c_path.rsplit('../', 1)[1])
-    else:
-        results = np.empty((n, 2), dtype=object)
-        memorized = {}
-        for i in range(n):
-            print('-> Clustering sample', i + 1, '/', n, '...', end='\r')
-            sample = np.random.choice(num_patients, s, replace=False)
-            results[i][0] = sample
-            sample_dist_matrix = np.empty((s, s), dtype=float)
-            for j in range(s):
-                for l in range(j, s):
-                    sorted_pair = tuple(sorted((sample[j], sample[l])))
-                    if j == l:
-                        sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair] = 0.0
-                    elif sorted_pair in memorized:
-                        sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair]
-                    else:
-                        cos_dist = cosine_distance(sample[j], sample[l], utility_tensor)
-                        sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair] = cos_dist
-            results[i][1] = kmedoids.fasterpam(sample_dist_matrix, k)
-        best_i = min(enumerate(results), key=lambda x: x[1][1].loss)[0]
-        sample = results[best_i][0]
-        medoids = sample[results[best_i][1].medoids]
-        patients_to_clusters = np.empty(num_patients, dtype=np.uintc)
+        print('-> Loaded pre-computed clusters from ../' + p2c_path.rsplit('../', 1)[1])
+        return patients_to_clusters
+
+    results = np.empty((n, 2), dtype=object)
+    memorized = {}
+    for i in range(n):
+        print('-> Clustering sample', i + 1, '/', n, '...', end='\r')
+        sample = np.random.choice(num_patients, s, replace=False)
+        results[i][0] = sample
+        sample_dist_matrix = np.empty((s, s), dtype=float)
         for j in range(s):
-            patients_to_clusters[sample[j]] = results[best_i][1].medoids[results[best_i][1].labels[j]]
-        print()
-        for i in range(num_patients):
-            if i in sample: # patients from winning sample have already been assigned, including all medoids
-                continue
-            np.random.shuffle(medoids) # to avoid general bias in case of frequently equidistant medoids
-            closest_med = k # impossibly large initial index
-            lowest_cos_dist = 1.1 # impossibly large initial value
-            print('-> Assigning patients to clusters', i + 1, '/', num_patients, '...', end='\r')
-            for med in medoids:
-                sorted_pair = tuple(sorted((i, med)))
-                if sorted_pair in memorized:
-                    cos_dist = memorized[sorted_pair]
+            for l in range(j, s):
+                sorted_pair = tuple(sorted((sample[j], sample[l])))
+                if j == l:
+                    sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair] = 0.0
+                elif sorted_pair in memorized:
+                    sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair]
                 else:
-                    cos_dist = memorized[sorted_pair] = cosine_distance(i, med, utility_tensor)
-                if cos_dist < lowest_cos_dist:
-                    closest_med = med
-                    lowest_cos_dist = cos_dist
-            patients_to_clusters[i] = closest_med
-        if not os.path.exists(res_dir):
-            os.mkdir(res_dir)
-        with open(p2c_path, 'wb') as f:
-            pickle.dump(patients_to_clusters, f)
-            print('\n-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
+                    cos_dist = cosine_distance(sample[j], sample[l], utility_tensor)
+                    sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair] = cos_dist
+        results[i][1] = kmedoids.fasterpam(sample_dist_matrix, k)
+    best_i = min(enumerate(results), key=lambda x: x[1][1].loss)[0]
+    sample = results[best_i][0]
+    medoids = sample[results[best_i][1].medoids]
+    patients_to_clusters = np.empty(num_patients, dtype=np.uintc)
+    for j in range(s):
+        patients_to_clusters[sample[j]] = results[best_i][1].medoids[results[best_i][1].labels[j]]
+    print()
+    for i in range(num_patients):
+        if i in sample: # patients from winning sample have already been assigned, including all medoids
+            continue
+        np.random.shuffle(medoids) # to avoid general bias in case of frequently equidistant medoids
+        closest_med = k # impossibly large initial index
+        lowest_cos_dist = 1.1 # impossibly large initial value
+        print('-> Assigning patients to clusters', i + 1, '/', num_patients, '...', end='\r')
+        for med in medoids:
+            sorted_pair = tuple(sorted((i, med)))
+            if sorted_pair in memorized:
+                cos_dist = memorized[sorted_pair]
+            else:
+                cos_dist = memorized[sorted_pair] = cosine_distance(i, med, utility_tensor)
+            if cos_dist < lowest_cos_dist:
+                closest_med = med
+                lowest_cos_dist = cos_dist
+        patients_to_clusters[i] = closest_med
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    with open(p2c_path, 'wb') as f:
+        pickle.dump(patients_to_clusters, f)
+        print('\n-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
 
     return patients_to_clusters
 
@@ -116,7 +116,7 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         size_t i, j, k, x, y, z, num_patients, num_conditions, num_therapies
         float previous_success, new_success
-        str pc_id, pc_kind, tr_pc_id, tr_th_id
+        str filename, pc_id, pc_kind, tr_pc_id, tr_th_id
         set remaining_ks, matching_ks
         list pconditions, trials
         dict dataset, patient, pcond, condition, utility_tensor
@@ -129,7 +129,8 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     num_patients = len(dataset['Patients'])
     num_conditions = len(dataset['Conditions'])
     num_therapies = len(dataset['Therapies'])
-    print('-> Successfully parsed %s' % filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath)
+    filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
+    print('-> Successfully parsed ' + filename)
 
     # create utility tensor:
     utility_tensor = {}
