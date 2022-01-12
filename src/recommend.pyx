@@ -11,6 +11,66 @@ cimport cython
 cimport numpy as np
 
 
+cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
+    cdef:
+        size_t i, j, k, x, y, z
+        float previous_success, new_success
+        str filename, data_dir, res_dir, utl_path, pc_id, pc_kind, tr_pc_id, tr_th_id
+        set remaining_ks, matching_ks
+        list filepath_split, pconditions, trials
+        dict patient, utility_tensor
+
+    filepath_split = filepath.replace('\\', '/').rsplit('/', 1)
+    filepath_split = ['.'] + filepath_split if len(filepath_split) < 2 else filepath_split
+    data_dir, filename = filepath_split
+    res_dir = data_dir + '/../results/'
+    utl_path = '%s%s_utl_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+
+    if os.path.exists(utl_path):
+        with open(utl_path, 'rb') as f:
+            utility_tensor = pickle.load(f)
+        print('-> Loaded pre-computed utility tensor from ../' + utl_path.rsplit('../', 1)[1])
+        return utility_tensor
+
+    utility_tensor = {}
+    for i in range(len(dataset['Patients'])): # iterate over patients
+        patient = dataset['Patients'][i]
+        pconditions = patient['conditions']
+        trials = patient['trials']
+        remaining_ks = set(range(len(trials)))
+        for j in range(len(pconditions)): # iterate over patient's conditions
+            pc_id = pconditions[j]['id']
+            pc_kind = pconditions[j]['kind']
+            previous_success = 0.0
+            matching_ks = set()
+            for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
+                tr_pc_id = trials[k]['condition']
+                if pc_id == tr_pc_id:
+                    tr_th_id = trials[k]['therapy']
+                    new_success = int(trials[k]['successful'].rstrip('%')) * 0.01 # TODO success as str work for B?
+                    x, y, z = i, int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
+                    assert new_success >= previous_success
+                    if x not in utility_tensor:
+                        utility_tensor[x] = {y: {z: new_success - previous_success}} # TODO success work for B?
+                    elif y not in utility_tensor[x]:
+                        utility_tensor[x][y] = {z: new_success - previous_success}
+                    elif z not in utility_tensor[x][y]:
+                        utility_tensor[x][y][z] = new_success - previous_success
+                    else: # TODO work for B? in the past, same patient already had same therapy for same kind of condition; avg. biased towards later instances
+                        utility_tensor[x][y][z] = (new_success - previous_success + utility_tensor[x][y][z]) / 2
+                    previous_success = new_success
+                    matching_ks.add(k)
+            remaining_ks = remaining_ks.difference(matching_ks)
+
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    with open(utl_path, 'wb') as f:
+        pickle.dump(utility_tensor, f)
+    print('-> Created and saved utility tensor to ../' + utl_path.rsplit('../', 1)[1])
+
+    return utility_tensor
+
+
 cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_tensor):
     cdef:
         size_t i, j, y1, z1, y2, z2
@@ -49,6 +109,7 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
         np.ndarray sample, sample_dist_matrix, results, medoids, patients_to_clusters
 
     np.random.seed(123)
+
     filepath_split = filepath.replace('\\', '/').rsplit('/', 1)
     filepath_split = ['.'] + filepath_split if len(filepath_split) < 2 else filepath_split
     data_dir, filename = filepath_split
@@ -103,11 +164,12 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
                 closest_med = med
                 lowest_cos_dist = cos_dist
         patients_to_clusters[i] = closest_med
+
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
     with open(p2c_path, 'wb') as f:
         pickle.dump(patients_to_clusters, f)
-        print('\n-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
+    print('\n-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
 
     return patients_to_clusters
 
@@ -149,77 +211,27 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
 
 cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
-        size_t i, j, k, x, y, z, num_patients, num_conditions, num_therapies
-        float previous_success, new_success
-        str filename, pc_id, pc_kind, tr_pc_id, tr_th_id
-        set remaining_ks, matching_ks
+        str filename
         list pconditions, trials
         dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
         np.ndarray patients_to_clusters
 
-    # parse dataset:
     assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
     with open(filepath, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
-    num_patients = len(dataset['Patients'])
-    num_conditions = len(dataset['Conditions']) # TODO redundant?
-    num_therapies = len(dataset['Therapies']) # TODO redundant?
     filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
-    print('-> Successfully parsed ' + filename)
-
-    # create utility tensor:
-    utility_tensor = {}
-    for i in range(num_patients): # iterate over patients
-        patient = dataset['Patients'][i]
-        pconditions = patient['conditions']
-        trials = patient['trials']
-        remaining_ks = set(range(len(trials)))
-        for j in range(len(pconditions)): # iterate over patient's conditions
-            pc_id = pconditions[j]['id']
-            pc_kind = pconditions[j]['kind']
-            previous_success = 0.0
-            matching_ks = set()
-            for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
-                tr_pc_id = trials[k]['condition']
-                if pc_id == tr_pc_id:
-                    tr_th_id = trials[k]['therapy']
-                    new_success = int(trials[k]['successful'].rstrip('%')) * 0.01 # TODO success as str work for B?
-                    x, y, z = i, int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
-                    assert new_success >= previous_success
-                    if x not in utility_tensor:
-                        utility_tensor[x] = {y: {z: new_success - previous_success}} # TODO success work for B?
-                    elif y not in utility_tensor[x]:
-                        utility_tensor[x][y] = {z: new_success - previous_success}
-                    elif z not in utility_tensor[x][y]:
-                        utility_tensor[x][y][z] = new_success - previous_success
-                    else: # TODO work for B? in the past, same patient already had same therapy for same kind of condition; avg. biased towards later instances
-                        utility_tensor[x][y][z] = (new_success - previous_success + utility_tensor[x][y][z]) / 2
-                    previous_success = new_success
-                    matching_ks.add(k)
-            remaining_ks = remaining_ks.difference(matching_ks)
-    print('-> Created raw utility tensor')
-
-    # arguments' values TODO:
     patient = dataset['Patients'][int(arg_patient_id) - 1]
     pconditions = patient['conditions']
-    trials = patient['trials']
     assert arg_patient_id == patient['id']
     pcond = pconditions[int(arg_pc_id.lstrip('pc')) - int(pconditions[0]['id'].lstrip('pc'))]
     assert arg_pc_id == pcond['id']
     condition = dataset['Conditions'][int(pcond['kind'].lstrip('Cond')) - 1]
     assert pcond['kind'] == condition['id']
+    print('-> Successfully parsed ' + filename)
 
-    # patient similarites:
-    # TODO thexash?
-    # now first: feature-agnostic collaborative filtering (baseline)
-    patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath)
+    utility_tensor = get_raw_utilities(dataset, filepath)
+    patients_to_clusters = cluster_patients(utility_tensor, len(dataset['Patients']), 100, 5, 500, filepath)
     condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters)
-    #pp = pprint.PrettyPrinter(indent=4)
-    #pp.pprint(condensed_utility_tensor)
-    #print('number of medoids:', len(list(condensed_utility_tensor.keys())))
-    #print(sorted(condensed_utility_tensor.keys()))
-
-    # finish:
     print('-> Everything okay!')
 
     return 0
