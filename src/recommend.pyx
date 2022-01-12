@@ -33,10 +33,11 @@ cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_
                         sum_squares_2 += value_2 ** 2
                     if y1 == y2 and z1 == z2:
                         dot_product += value_1 * value_2
+
     if sum_squares_1 == 0 or sum_squares_2 == 0:
         return 1.0
 
-    return 1 - dot_product / np.sqrt(sum_squares_1 * sum_squares_2)
+    return 1.0 - dot_product / np.sqrt(sum_squares_1 * sum_squares_2)
 
 
 cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath):
@@ -55,7 +56,6 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
     data_dir, filename = filepath_split
     res_dir = data_dir + '/../results/'
     p2c_path = '%s%s_p2c_%d_%d_%d.pickle' % (res_dir, filename.rstrip('.json'), k, n, s)
-
     if os.path.exists(p2c_path):
         with open(p2c_path, 'rb') as f:
             patients_to_clusters = pickle.load(f)
@@ -79,41 +79,35 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
                         cos_dist = cosine_distance(sample[j], sample[l], utility_tensor)
                         sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair] = cos_dist
             results[i][1] = kmedoids.fasterpam(sample_dist_matrix, k)
-
         best_i = min(enumerate(results), key=lambda x: x[1][1].loss)[0]
         sample = results[best_i][0]
         medoids = sample[results[best_i][1].medoids]
         patients_to_clusters = np.empty(num_patients, dtype=np.uintc)
-
         for j in range(s):
             patients_to_clusters[sample[j]] = results[best_i][1].medoids[results[best_i][1].labels[j]]
         print()
         for i in range(num_patients):
             if i in sample: # patients from winning sample have already been assigned, including all medoids
                 continue
-
             np.random.shuffle(medoids) # to avoid general bias in case of frequently equidistant medoids
             closest_med = k # impossibly large initial index
-            lowest_cos_dist = 2.1 # impossibly large initial value
+            lowest_cos_dist = 1.1 # impossibly large initial value
             print('-> Assigning patients to clusters', i + 1, '/', num_patients, '...', end='\r')
-
             for med in medoids:
                 sorted_pair = tuple(sorted((i, med)))
                 if sorted_pair in memorized:
                     cos_dist = memorized[sorted_pair]
                 else:
                     cos_dist = memorized[sorted_pair] = cosine_distance(i, med, utility_tensor)
-
                 if cos_dist < lowest_cos_dist:
                     closest_med = med
                     lowest_cos_dist = cos_dist
             patients_to_clusters[i] = closest_med
-
         if not os.path.exists(res_dir):
             os.mkdir(res_dir)
         with open(p2c_path, 'wb') as f:
             pickle.dump(patients_to_clusters, f)
-            print('-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
+            print('\n-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
 
     return patients_to_clusters
 
@@ -149,20 +143,21 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
             pc_kind = pconditions[j]['kind']
             previous_success = 0.0
             matching_ks = set()
-            for k in remaining_ks: # efficiently iterate over corresponding trials
+            for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
                 tr_pc_id = trials[k]['condition']
                 if pc_id == tr_pc_id:
                     tr_th_id = trials[k]['therapy']
-                    new_success = int(trials[k]['successful'].rstrip('%')) * 0.01
+                    new_success = int(trials[k]['successful'].rstrip('%')) * 0.01 # TODO success as str work for B?
                     x, y, z = i, int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
+                    assert new_success >= previous_success
                     if x not in utility_tensor:
-                        utility_tensor[x] = {y: {z: new_success - previous_success - 0.5}} # TODO success work for B?
+                        utility_tensor[x] = {y: {z: new_success - previous_success}} # TODO success work for B?
                     elif y not in utility_tensor[x]:
-                        utility_tensor[x][y] = {z: new_success - previous_success - 0.5}
+                        utility_tensor[x][y] = {z: new_success - previous_success}
                     elif z not in utility_tensor[x][y]:
-                        utility_tensor[x][y][z] = new_success - previous_success - 0.5
-                    else: # TODO works for B? in the past, same patient already had same therapy for same kind of condition; avg. biased towards later instances
-                        utility_tensor[x][y][z] = (new_success - previous_success - 0.5 + utility_tensor[x][y][z]) / 2
+                        utility_tensor[x][y][z] = new_success - previous_success
+                    else: # TODO work for B? in the past, same patient already had same therapy for same kind of condition; avg. biased towards later instances
+                        utility_tensor[x][y][z] = (new_success - previous_success + utility_tensor[x][y][z]) / 2
                     previous_success = new_success
                     matching_ks.add(k)
             remaining_ks = remaining_ks.difference(matching_ks)
