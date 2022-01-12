@@ -11,25 +11,33 @@ cimport cython
 cimport numpy as np
 
 
-cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
+cdef tuple get_directory_info(str filepath):
     cdef:
-        size_t i, j, k, x, y, z
-        float previous_success, new_success
-        str filename, data_dir, res_dir, utl_path, pc_id, pc_kind, tr_pc_id, tr_th_id
-        set remaining_ks, matching_ks
-        list filepath_split, pconditions, trials
-        dict patient, utility_tensor
+        list filepath_split
+        str data_dir, res_dir, filename
 
     filepath_split = filepath.replace('\\', '/').rsplit('/', 1)
     filepath_split = ['.'] + filepath_split if len(filepath_split) < 2 else filepath_split
     data_dir, filename = filepath_split
     res_dir = data_dir + '/../results/'
-    utl_path = '%s%s_utl_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    return (res_dir, filename)
 
+
+cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
+    cdef:
+        size_t i, j, k, x, y, z
+        float previous_success, new_success
+        str res_dir, filename, utl_path, pc_id, pc_kind, tr_pc_id, tr_th_id
+        set remaining_ks, matching_ks
+        list pconditions, trials
+        dict patient, utility_tensor
+
+    res_dir, filename = get_directory_info(filepath)
+    utl_path = '%s%s_utl_raw_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
     if os.path.exists(utl_path):
         with open(utl_path, 'rb') as f:
             utility_tensor = pickle.load(f)
-        print('-> Loaded pre-computed utility tensor from ../' + utl_path.rsplit('../', 1)[1])
+        print('-> Loaded pre-computed raw utility tensor from ../' + utl_path.rsplit('../', 1)[1])
         return utility_tensor
 
     utility_tensor = {}
@@ -66,7 +74,7 @@ cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
         os.mkdir(res_dir)
     with open(utl_path, 'wb') as f:
         pickle.dump(utility_tensor, f)
-    print('-> Created and saved utility tensor to ../' + utl_path.rsplit('../', 1)[1])
+    print('-> Created and saved raw utility tensor to ../' + utl_path.rsplit('../', 1)[1])
 
     return utility_tensor
 
@@ -98,23 +106,19 @@ cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_
     return 1.0 - dot_product / np.sqrt(sum_squares_1 * sum_squares_2)
 
 
-cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath):
+cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath, mode='baseline'):
     cdef:
         size_t i, j, l, best_i, med, closest_med
         float cos_dist, lowest_cos_dist
         tuple sorted_pair
         dict memorized
-        list filepath_split
-        str data_dir, res_dir, filename, p2c_path
+        str res_dir, filename, p2c_path
         np.ndarray sample, sample_dist_matrix, results, medoids, patients_to_clusters
 
     np.random.seed(123)
 
-    filepath_split = filepath.replace('\\', '/').rsplit('/', 1)
-    filepath_split = ['.'] + filepath_split if len(filepath_split) < 2 else filepath_split
-    data_dir, filename = filepath_split
-    res_dir = data_dir + '/../results/'
-    p2c_path = '%s%s_p2c_%d_%d_%d.pickle' % (res_dir, filename.rstrip('.json'), k, n, s)
+    res_dir, filename = get_directory_info(filepath)
+    p2c_path = '%s%s_p2c_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
 
     if os.path.exists(p2c_path):
         with open(p2c_path, 'rb') as f:
@@ -174,10 +178,19 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
     return patients_to_clusters
 
 
-cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_clusters):
+cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_clusters, str filepath, str mode='baseline'):
     cdef:
         size_t i, med, y, z, num_clustered_patients
         dict condensed_utility_tensor, agglomerated_utility_tensor, patient_matrix
+        str res_dir, filename, utl_path
+
+    res_dir, filename = get_directory_info(filepath)
+    utl_path = '%s%s_utl_dense_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    if os.path.exists(utl_path):
+        with open(utl_path, 'rb') as f:
+            condensed_utility_tensor = pickle.load(f)
+        print('-> Loaded pre-computed condensed utility tensor from ../' + utl_path.rsplit('../', 1)[1])
+        return condensed_utility_tensor
 
     agglomerated_utility_tensor = {}
     condensed_utility_tensor = {}
@@ -204,34 +217,90 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
         for y in condensed_utility_tensor[med]:
             for z in condensed_utility_tensor[med][y]:
                 condensed_utility_tensor[med][y][z] /= num_clustered_patients
-    print('-> Computed condensed utility tensor')
+
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    with open(utl_path, 'wb') as f:
+        pickle.dump(condensed_utility_tensor, f)
+    print('-> Created and saved condensed utility tensor to ../' + utl_path.rsplit('../', 1)[1])
 
     return condensed_utility_tensor
+
+
+cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str filepath, mode='baseline'):
+    cdef:
+        size_t i, j, iter_count, med1, med2, num_clusters, num_iterations
+        np.ndarray clusters_dist_matrix
+        str res_dir, filename, dmt_path
+
+    res_dir, filename = get_directory_info(filepath)
+    dmt_path = '%s%s_dmt_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    if os.path.exists(dmt_path):
+        with open(dmt_path, 'rb') as f:
+            clusters_dist_matrix = pickle.load(f)
+        print("-> Loaded pre-computed clusters' distance matrix from ../" + dmt_path.rsplit('../', 1)[1])
+        return clusters_dist_matrix
+
+    num_clusters = len(condensed_utility_tensor)
+    num_iterations = num_clusters * (num_clusters + 1) // 2
+    clusters_dist_matrix = np.empty((num_clusters, num_clusters), dtype=float)
+    iter_count = 0
+    for i, med1 in enumerate(condensed_utility_tensor):
+        for j, med2 in enumerate(condensed_utility_tensor):
+            if i > j:
+                continue
+            iter_count += 1
+            print('-> Computing cosine distances between clusters', iter_count, '/', num_iterations, '...', end='\r')
+            if i == j:
+                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = 0.0
+            else:
+                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = cosine_distance(med1, med2, condensed_utility_tensor)
+
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    with open(dmt_path, 'wb') as f:
+        pickle.dump(clusters_dist_matrix, f)
+    print("\n-> Saved clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1])
+
+    return clusters_dist_matrix
+
+
+cdef np.ndarray recommend(dict patient, dict pcond, dict condition, dict condensed_utility_tensor, np.ndarray patients_to_clusters, np.ndarray clusters_dist_matrix):
+    cdef:
+        size_t num_clusters
+        np.ndarray recommendations
+
+    recommendations = np.empty(5, dtype=object)
+    print(condensed_utility_tensor[patients_to_clusters[int(patient['id']) - 1]][int(condition['id'].lstrip('Cond')) - 1])
+    # TODO something with super-condensed and/or clusters_dist_matrix, literally
+
+    return recommendations
 
 
 cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         str filename
-        list pconditions, trials
         dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
         np.ndarray patients_to_clusters
 
     assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
     with open(filepath, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
-    filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
     patient = dataset['Patients'][int(arg_patient_id) - 1]
-    pconditions = patient['conditions']
     assert arg_patient_id == patient['id']
-    pcond = pconditions[int(arg_pc_id.lstrip('pc')) - int(pconditions[0]['id'].lstrip('pc'))]
+    pcond = patient['conditions'][int(arg_pc_id.lstrip('pc')) - int(patient['conditions'][0]['id'].lstrip('pc'))]
     assert arg_pc_id == pcond['id']
     condition = dataset['Conditions'][int(pcond['kind'].lstrip('Cond')) - 1]
     assert pcond['kind'] == condition['id']
+    filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
     print('-> Successfully parsed ' + filename)
 
     utility_tensor = get_raw_utilities(dataset, filepath)
     patients_to_clusters = cluster_patients(utility_tensor, len(dataset['Patients']), 100, 5, 500, filepath)
-    condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters)
+    condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath)
+    clusters_dist_matrix = get_clusters_distance_matrix(condensed_utility_tensor, filepath)
+    recommend(patient, pcond, condition, condensed_utility_tensor, patients_to_clusters, clusters_dist_matrix) # TODO debug
+    print(clusters_dist_matrix)
     print('-> Everything okay!')
 
     return 0
