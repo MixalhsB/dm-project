@@ -267,7 +267,6 @@ cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str 
 
 cdef np.ndarray recommend(dict patient, dict pcond, dict condition, dict condensed_utility_tensor, np.ndarray patients_to_clusters, np.ndarray clusters_dist_matrix):
     cdef:
-        size_t num_clusters
         np.ndarray recommendations
 
     recommendations = np.empty(5, dtype=object)
@@ -281,7 +280,7 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         str filename
         dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
-        np.ndarray patients_to_clusters
+        np.ndarray patients_to_clusters, clusters_dist_matrix
 
     assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
     with open(filepath, 'r', encoding='utf-8') as f:
