@@ -25,8 +25,8 @@ cdef tuple get_directory_info(str filepath):
 
 cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
     cdef:
-        size_t i, j, k, x, y, z
-        float previous_success, new_success
+        size_t i, j, k, y, z
+        float success
         str res_dir, filename, utl_path, pc_id, pc_kind, tr_pc_id, tr_th_id
         set remaining_ks, matching_ks
         list pconditions, trials
@@ -42,6 +42,7 @@ cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
 
     utility_tensor = {}
     for i in range(len(dataset['Patients'])): # iterate over patients
+        utility_tensor[i] = {}
         patient = dataset['Patients'][i]
         pconditions = patient['conditions']
         trials = patient['trials']
@@ -49,24 +50,19 @@ cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
         for j in range(len(pconditions)): # iterate over patient's conditions
             pc_id = pconditions[j]['id']
             pc_kind = pconditions[j]['kind']
-            previous_success = 0.0
             matching_ks = set()
             for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
                 tr_pc_id = trials[k]['condition']
                 if pc_id == tr_pc_id:
                     tr_th_id = trials[k]['therapy']
-                    new_success = int(trials[k]['successful'].rstrip('%')) * 0.01 # TODO success as str work for B?
-                    x, y, z = i, int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
-                    assert new_success >= previous_success
-                    if x not in utility_tensor:
-                        utility_tensor[x] = {y: {z: new_success - previous_success}} # TODO success work for B?
-                    elif y not in utility_tensor[x]:
-                        utility_tensor[x][y] = {z: new_success - previous_success}
-                    elif z not in utility_tensor[x][y]:
-                        utility_tensor[x][y][z] = new_success - previous_success
-                    else: # TODO work for B? in the past, same patient already had same therapy for same kind of condition; avg. biased towards later instances
-                        utility_tensor[x][y][z] = (new_success - previous_success + utility_tensor[x][y][z]) / 2
-                    previous_success = new_success
+                    success = float(str(trials[k]['successful']).rstrip('%')) * 0.01 # cover both 100 and '100%'
+                    y, z = int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
+                    if y not in utility_tensor[i]:
+                        utility_tensor[i][y] = {z: success}
+                    elif z not in utility_tensor[i][y]:
+                        utility_tensor[i][y][z] = success
+                    else:
+                        utility_tensor[i][y][z] = max(success, utility_tensor[i][y][z])
                     matching_ks.add(k)
             remaining_ks = remaining_ks.difference(matching_ks)
 
@@ -100,7 +96,7 @@ cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_
                     if y1 == y2 and z1 == z2:
                         dot_product += value_1 * value_2
 
-    if sum_squares_1 == 0 or sum_squares_2 == 0:
+    if sum_squares_1 == 0.0 or sum_squares_2 == 0.0:
         return 1.0
 
     return 1.0 - dot_product / np.sqrt(sum_squares_1 * sum_squares_2)
@@ -227,7 +223,7 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
     return condensed_utility_tensor
 
 
-cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str filepath, int row=-1, mode='baseline'): # row=-1: full matrix
+cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed_utility_tensor, str filepath, int row=-1, mode='baseline'): # row=-1: full matrix
     cdef:
         size_t i, j, iter_count, med1, med2, num_clusters, num_iterations
         np.ndarray clusters_dist_matrix, row_is_precomputed
@@ -243,7 +239,7 @@ cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str 
         if row >= 0 and os.path.exists(dmt_path + str(row) + '.pickle'):
             with open(dmt_path + str(row) + '.pickle', 'rb') as f:
                 clusters_dist_matrix[row] = pickle.load(f)
-            print("-> Loaded pre-computed clusters' distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+            print("-> Loaded pre-computed cluster's distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
             return clusters_dist_matrix[row]
 
         for i in range(num_clusters):
@@ -265,13 +261,13 @@ cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str 
             if row == -1 and i > j:
                 continue
             iter_count += 1
-            print('-> Computing cosine distances between clusters', iter_count, '/', num_iterations, '...', end='\r')
+            print('-> Computing distances between clusters', iter_count, '/', num_iterations, '...', end='\r')
             if i == j:
                 clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = 0.0
             elif row_is_precomputed[j]:
                 clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i]
             else:
-                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = cosine_distance(med1, med2, condensed_utility_tensor)
+                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = cosine_distance(med1, med2, utility_tensor)
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
@@ -280,28 +276,24 @@ cdef np.ndarray get_clusters_distance_matrix(dict condensed_utility_tensor, str 
     if row >= 0:
         with open(dmt_path + str(row) + '.pickle', 'wb') as f:
             pickle.dump(clusters_dist_matrix[row], f)
-        print("\n-> Saved clusters' distance vector to ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+        print("\n-> Saved cluster's distance vector to ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
     else:
         for i in range(num_clusters):
             with open(dmt_path + str(i) + '.pickle', 'wb') as f:
                 pickle.dump(clusters_dist_matrix[i], f)
+            print(clusters_dist_matrix[i]) # TODO debug
         print("\n-> Saved full clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
 
     return clusters_dist_matrix[row] if row >= 0 else clusters_dist_matrix
 
 
-cdef np.ndarray recommend(dict patient, dict pcond, dict condition, dict condensed_utility_tensor, np.ndarray patients_to_clusters, str filepath):
+cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t med, dict condensed_utility_tensor, np.ndarray clusters_dist_vector, str filepath):
     cdef:
-        size_t med, row
-        np.ndarray clusters_dist_vector, recommendations
+        np.ndarray recommendations
 
-    med = patients_to_clusters[int(patient['id']) - 1]
-    row = list(condensed_utility_tensor).index(med)
-    clusters_dist_vector = get_clusters_distance_matrix(condensed_utility_tensor, filepath, row=row)
-    # TODO tbc
     recommendations = np.empty(5, dtype=object)
     print(condensed_utility_tensor[med][int(condition['id'].lstrip('Cond')) - 1])
-    # TODO something with clusters_dist_matrix, literally
+    # TODO tbc here: 0.01-Idee etc.
 
     return recommendations
 
@@ -309,14 +301,22 @@ cdef np.ndarray recommend(dict patient, dict pcond, dict condition, dict condens
 cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         str filename
+        size_t med, row
         dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
-        np.ndarray patients_to_clusters, clusters_dist_matrix
+        np.ndarray patients_to_clusters, clusters_dist_vector, recommendations
 
     assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
     with open(filepath, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
-    patient = dataset['Patients'][int(arg_patient_id) - 1]
-    assert arg_patient_id == patient['id']
+
+    if dataset['Patients'][0]['id'] == '1': # datasetA.json case
+        patient = dataset['Patients'][int(arg_patient_id) - 1]
+        assert arg_patient_id == patient['id']
+    else:
+        assert dataset['Patients'][0]['id'] == 0 # datasetB.json case
+        patient = dataset['Patients'][int(arg_patient_id)]
+        assert int(arg_patient_id) == patient['id']
+    
     pcond = patient['conditions'][int(arg_pc_id.lstrip('pc')) - int(patient['conditions'][0]['id'].lstrip('pc'))]
     assert arg_pc_id == pcond['id']
     condition = dataset['Conditions'][int(pcond['kind'].lstrip('Cond')) - 1]
@@ -327,8 +327,12 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     utility_tensor = get_raw_utilities(dataset, filepath)
     patients_to_clusters = cluster_patients(utility_tensor, len(dataset['Patients']), 100, 5, 500, filepath)
     condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath)
-    clusters_dist_matrix = get_clusters_distance_matrix(condensed_utility_tensor, filepath) # TODO don't need!
-    recommend(patient, pcond, condition, condensed_utility_tensor, patients_to_clusters, filepath) # TODO debug
+    ### get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, row = -1)
+    med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]
+    row = list(condensed_utility_tensor).index(med)
+    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, row=row)
+    recommendations = recommend(patient, pcond, condition, med, condensed_utility_tensor, clusters_dist_vector, filepath)
+    print(recommendations) # TODO debug
     print('-> Everything okay!')
 
     return 0
