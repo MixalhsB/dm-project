@@ -287,13 +287,42 @@ cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed
     return clusters_dist_matrix[row] if row >= 0 else clusters_dist_matrix
 
 
-cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t med, dict condensed_utility_tensor, np.ndarray clusters_dist_vector, str filepath):
+cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t num_therapies, dict condensed_utility_tensor, np.ndarray clusters_dist_vector):
     cdef:
-        np.ndarray recommendations
+        size_t i, med, condition_y, therapy_z, previous_therapy_z
+        tuple item
+        list recommendations_list
+        np.ndarray recommendations, random_sample
+        dict weighted_scaled_utilities, final_utilities
 
-    recommendations = np.empty(5, dtype=object)
-    print(condensed_utility_tensor[med][int(condition['id'].lstrip('Cond')) - 1])
-    # TODO tbc here: 0.01-Idee etc.
+    condition_y = int(condition['id'].lstrip('Cond')) - 1
+    final_utilities = {}
+    for i, med in enumerate(condensed_utility_tensor):
+        weight = 1.01 - clusters_dist_vector[i]
+        if condition_y not in condensed_utility_tensor[med]:
+            final_utilities[therapy_z] = 0.0
+        else:
+            for therapy_z in condensed_utility_tensor[med][condition_y]:
+                if therapy_z not in final_utilities:
+                    final_utilities[therapy_z] = weight * condensed_utility_tensor[med][condition_y][therapy_z]
+                else:
+                    final_utilities[therapy_z] += weight * condensed_utility_tensor[med][condition_y][therapy_z]
+    for i in range(len(patient['trials'])):
+        if pcond['id'] == patient['trials'][i]['condition']:
+            previous_therapy_z = int(patient['trials'][i]['therapy'].lstrip('Th')) - 1
+            if previous_therapy_z in final_utilities:
+                final_utilities[previous_therapy_z] = 0.0 # therapies already administered for same 'pc' should be dispreferred
+    recommendations_list = list((item[0] for item in sorted((item for item in final_utilities.items()), key=lambda item: -item[1])))
+    if len(recommendations_list) < 5: # only if length of supported list of therapies is smaller than 5, then fill up with random choices
+        random_sample = np.random.choice(num_therapies, 10, replace=False)
+        for i in range(10):
+            if random_sample[i] not in recommendations_list:
+                recommendations_list.append(random_sample[i])
+                if len(recommendations_list) == 5:
+                    break
+    recommendations = np.empty(5, dtype=np.uintc)
+    for i in range(5):
+        recommendations[i] = recommendations_list[i]
 
     return recommendations
 
@@ -301,7 +330,7 @@ cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t med, 
 cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         str filename
-        size_t med, row
+        size_t med, row, num_therapies
         dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
         np.ndarray patients_to_clusters, clusters_dist_vector, recommendations
 
@@ -331,7 +360,8 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]
     row = list(condensed_utility_tensor).index(med)
     clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, row=row)
-    recommendations = recommend(patient, pcond, condition, med, condensed_utility_tensor, clusters_dist_vector, filepath)
+    num_therapies = len(dataset['Therapies'])
+    recommendations = recommend(patient, pcond, condition, num_therapies, condensed_utility_tensor, clusters_dist_vector)
     print(recommendations) # TODO debug
     print('-> Everything okay!')
 
