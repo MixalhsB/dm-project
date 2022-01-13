@@ -1,5 +1,6 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 
+from datetime import datetime as dt
 import os
 import sys
 import json
@@ -23,26 +24,113 @@ cdef tuple get_directory_info(str filepath):
     return (res_dir, filename)
 
 
-cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
+cdef tuple get_relevant_keys(list sub_dataset, str filepath, str label=''):
     cdef:
-        size_t i, j, k, y, z
-        float success
-        str res_dir, filename, utl_path, pc_id, pc_kind, tr_pc_id, tr_th_id
+        size_t i, num_relevant_keys
+        float float_val, minimum, maximum
+        str str_val, key, other_key, key_type, res_dir, filename, rky_path
+        set remaining_continuous_keys, str_vals_as_set
+        dict rel_keys, key_properties, key_vals
+
+    if label:
+        res_dir, filename = get_directory_info(filepath)
+        rky_path = '%s%s_rky_%s.pickle' % (res_dir, filename.rstrip('.json'), label)
+        if os.path.exists(rky_path):
+            with open(rky_path, 'rb') as f:
+                rel_keys, key_vals = pickle.load(f)
+            print('-> Loaded pre-computed relevant keys for %s from ../%s' % (label, rky_path.rsplit('../', 1)[1]))
+            return (rel_keys, key_vals)
+
+    assert len(sub_dataset) > 0
+    remaining_continuous_keys = set() # only relevant for correlation computation below
+    key_properties = {}
+    for key in sub_dataset[0].keys():
+        if key == 'id' or type(sub_dataset[0][key]) == list:
+            continue
+        if type(sub_dataset[0][key]) == int or type(sub_dataset[0][key]) == float:
+            key_type = 'continuous_regular'
+        else:
+            assert type(sub_dataset[0][key]) == str
+            str_val = sub_dataset[0][key]
+            if str_val.count('.') <= 1 and str_val.replace('.', '').isdigit():
+                if '.' not in str_val and len(str_val) == 8 and str_val[:2] in ('19', '20') and '01' <= str_val[4:6] <= '12' and '01' <= str_val[6:] <= '31':
+                    key_type = 'continuous_date'
+                else:
+                    key_type = 'continuous_regular'
+            else:
+                key_type = 'discrete'
+        key_properties[key] = (key_type.split('_')[0], [])
+        for i in range(len(sub_dataset)):
+            if key_type == 'continuous_regular':
+                float_val = float(sub_dataset[i][key])
+                key_properties[key][1].append(float_val)
+                remaining_continuous_keys.add(key)
+            elif key_type == 'continuous_date':
+                float_val = float((dt.strptime(sub_dataset[i][key], '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
+                key_properties[key][1].append(float_val)
+                remaining_continuous_keys.add(key)
+            else:
+                str_val = sub_dataset[i][key]
+                key_properties[key][1].append(str_val)
+    rel_keys = {'continuous': {}, 'discrete': set()}
+    for key in key_properties:
+        if key_properties[key][0] == 'continuous':
+            remaining_continuous_keys.remove(key)
+            minimum, maximum = min(key_properties[key][1]), max(key_properties[key][1])
+            if minimum == maximum:
+                continue
+            if any((abs(np.corrcoef(key_properties[key][1], key_properties[other_key][1])[0][1]) >= 0.9 for other_key in remaining_continuous_keys)):
+                continue
+            rel_keys['continuous'][key] = (minimum, maximum)
+        else:
+            assert key_properties[key][0] == 'discrete'
+            str_vals_as_set = set(key_properties[key][1])
+            if len(str_vals_as_set) == 1:
+                continue
+            if len(str_vals_as_set) == len(key_properties[key][1]):
+                continue
+            rel_keys['discrete'].add(key)
+    key_vals = {key: key_properties[key][1] for key in key_properties if key in rel_keys['continuous'] or key in rel_keys['discrete']}
+
+    if label:
+        if not os.path.exists(res_dir):
+            os.mkdir(res_dir)
+        with open(rky_path, 'wb') as f:
+            pickle.dump((rel_keys, key_vals), f)
+        print('-> Extracted and saved relevant keys for %s to ../%s' % (label, rky_path.rsplit('../', 1)[1]))
+    else:
+        print('-> Extracted relevant keys')
+
+    return (rel_keys, key_vals)
+
+
+cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
+    cdef:
+        size_t i, j, k, y, z, num_patients, num_conditions
+        float success, end, min_end, max_end, duration_in_days
+        str res_dir, filename, utl_path, hnr_path, pc_id, pc_kind, tr_pc_id, tr_th_id, tr_start, tr_end
         set remaining_ks, matching_ks
         list pconditions, trials
         dict patient, utility_tensor
 
     res_dir, filename = get_directory_info(filepath)
-    utl_path = '%s%s_utl_raw_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    utl_path = '%s%s_utl_raw_henr_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
     if os.path.exists(utl_path):
         with open(utl_path, 'rb') as f:
-            utility_tensor = pickle.load(f)
-        print('-> Loaded pre-computed raw utility tensor from ../' + utl_path.rsplit('../', 1)[1])
-        return utility_tensor
+            utility_tensor, half_enriched_tensor = pickle.load(f)
+        print('-> Loaded pre-computed raw utility tensor%s from ../' % (' and trial-recency tensor' if mode == 'hybrid' else '') + utl_path.rsplit('../', 1)[1])
+        return (utility_tensor, half_enriched_tensor)
 
     utility_tensor = {}
-    for i in range(len(dataset['Patients'])): # iterate over patients
+    half_enriched_tensor = {} # only relevant in 'hybrid' mode; stays empty otherwise
+    if mode == 'hybrid':
+        min_end, max_end = 73048.0, 0.0 # a.k.a. initially 2099-12-31, 1900-01-01
+    num_patients, num_conditions = len(dataset['Patients']), len(dataset['Conditions'])
+    for i in range(num_patients): # iterate over patients
+        print('-> Building raw utility tensor' + ' and trial-recency tensor' if mode == 'hybrid' else '', i + 1, '/', num_patients, '...', end='\r')
         utility_tensor[i] = {}
+        if mode == 'hybrid':
+            half_enriched_tensor[i] = {}
         patient = dataset['Patients'][i]
         pconditions = patient['conditions']
         trials = patient['trials']
@@ -54,25 +142,85 @@ cdef dict get_raw_utilities(dict dataset, str filepath, str mode='baseline'):
             for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
                 tr_pc_id = trials[k]['condition']
                 if pc_id == tr_pc_id:
+                    success = 0.01 * float(str(trials[k]['successful']).rstrip('%')) # cover both 100 and '100%'
+                    if mode == 'hybrid':
+                        tr_start, tr_end = trials[k]['start'], trials[k]['end']
+                        duration_in_days = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime(tr_start, '%Y%m%d')).days)
+                        success /= 1 + np.log(1 + duration_in_days) # factor in inverse trial duration for success criterion
+                        end = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
+                        min_end, max_end = min(end, min_end), max(end, max_end)
                     tr_th_id = trials[k]['therapy']
-                    success = float(str(trials[k]['successful']).rstrip('%')) * 0.01 # cover both 100 and '100%'
                     y, z = int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
                     if y not in utility_tensor[i]:
                         utility_tensor[i][y] = {z: success}
+                        if mode == 'hybrid':
+                            half_enriched_tensor[i][num_conditions + y] = {z: end}
                     elif z not in utility_tensor[i][y]:
                         utility_tensor[i][y][z] = success
+                        if mode == 'hybrid':
+                            half_enriched_tensor[i][num_conditions + y][z] = end
                     else:
                         utility_tensor[i][y][z] = max(success, utility_tensor[i][y][z])
+                        if mode == 'hybrid':
+                            half_enriched_tensor[i][num_conditions + y][z] = max(end, half_enriched_tensor[i][num_conditions + y][z])
                     matching_ks.add(k)
             remaining_ks = remaining_ks.difference(matching_ks)
+    if mode == 'hybrid':
+        assert max_end > 0.0
+        print()
+        for i in range(num_patients):
+            print('-> Normalizing values in trial-recency tensor', i + 1, '/', num_patients, '...', end='\r')
+            for y in half_enriched_tensor[i]:
+                for z in half_enriched_tensor[i][y]:
+                    half_enriched_tensor[i][y][z] -= min_end
+                    half_enriched_tensor[i][y][z] /= max_end
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
     with open(utl_path, 'wb') as f:
-        pickle.dump(utility_tensor, f)
-    print('-> Created and saved raw utility tensor to ../' + utl_path.rsplit('../', 1)[1])
+        pickle.dump((utility_tensor, half_enriched_tensor), f)
+    print('\n-> Saved raw utility tensor%s to ../' % (' and trial-recency tensor' if mode == 'hybrid' else '') + utl_path.rsplit('../', 1)[1])
 
-    return utility_tensor
+    return (utility_tensor, half_enriched_tensor)
+
+
+cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tuple rky_patients, size_t num_conditions, str filepath):
+    cdef:
+        size_t i, j, hash_key_value
+        float minimum, maximum
+        str key, res_dir, filename, enr_path
+        dict enriched_tensor
+
+    res_dir, filename = get_directory_info(filepath)
+    enr_path = '%s%s_enr.pickle' % (res_dir, filename.rstrip('.json'))
+    if os.path.exists(enr_path):
+        with open(enr_path, 'rb') as f:
+            enriched_tensor = pickle.load(f)
+        print('-> Loaded pre-computed enriched tensor from ../' + enr_path.rsplit('../', 1)[1])
+        return enriched_tensor
+
+    enriched_tensor = utility_tensor.copy()
+    enriched_tensor.update(half_enriched_tensor)
+    for i in enriched_tensor:
+        for j, (key, (minimum, maximum)) in enumerate(rky_patients[0]['continuous'].items()):
+            if num_conditions * 2 not in enriched_tensor[i]:
+                enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}
+            else:
+                enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum
+        for j, key in enumerate(rky_patients[0]['discrete']):
+            hash_key_value = hash((key, rky_patients[1][key][i]))
+            if num_conditions * 2 + 1 not in enriched_tensor[i]:
+                enriched_tensor[i][num_conditions * 2 + 1] = {hash_key_value: 1.0}
+            else:
+                enriched_tensor[i][num_conditions * 2 + 1][hash_key_value] = 1.0
+
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    with open(enr_path, 'wb') as f:
+        pickle.dump(enriched_tensor, f)
+    print('-> Created and saved enriched tensor to ../' + enr_path.rsplit('../', 1)[1])
+
+    return enriched_tensor
 
 
 cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_tensor):
@@ -102,7 +250,7 @@ cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_
     return 1.0 - dot_product / np.sqrt(sum_squares_1 * sum_squares_2)
 
 
-cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath, mode='baseline'):
+cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath, str mode):
     cdef:
         size_t i, j, l, best_i, med, closest_med
         float cos_dist, lowest_cos_dist
@@ -174,7 +322,7 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
     return patients_to_clusters
 
 
-cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_clusters, str filepath, str mode='baseline'):
+cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_clusters, str filepath, str mode):
     cdef:
         size_t i, med, y, z, num_clustered_patients
         dict condensed_utility_tensor, agglomerated_utility_tensor, patient_matrix
@@ -223,7 +371,7 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
     return condensed_utility_tensor
 
 
-cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed_utility_tensor, str filepath, int row=-1, mode='baseline'): # row=-1: full matrix
+cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed_utility_tensor, str filepath, str mode, int row=-1): # row=-1: full matrix
     cdef:
         size_t i, j, iter_count, med1, med2, num_clusters, num_iterations
         np.ndarray clusters_dist_matrix, row_is_precomputed
@@ -287,7 +435,7 @@ cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed
     return clusters_dist_matrix[row] if row >= 0 else clusters_dist_matrix
 
 
-cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t num_therapies, dict condensed_utility_tensor, np.ndarray clusters_dist_vector):
+cdef np.ndarray recommend(dict patient, dict pcond, size_t num_therapies, dict condensed_utility_tensor, np.ndarray clusters_dist_vector):
     cdef:
         size_t i, med, condition_y, therapy_z, previous_therapy_z
         tuple item
@@ -295,7 +443,7 @@ cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t num_t
         np.ndarray recommendations, random_sample
         dict weighted_scaled_utilities, final_utilities
 
-    condition_y = int(condition['id'].lstrip('Cond')) - 1
+    condition_y = int(pcond['kind'].lstrip('Cond')) - 1
     final_utilities = {}
     for i, med in enumerate(condensed_utility_tensor):
         weight = 1.01 - clusters_dist_vector[i]
@@ -329,14 +477,17 @@ cdef np.ndarray recommend(dict patient, dict pcond, dict condition, size_t num_t
 
 cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
-        str filename
-        size_t med, row, num_therapies
-        dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor
+        str filename, mode
+        size_t med, row, therapy_z, num_patients, num_conditions, num_therapies
+        tuple rky_patients, rky_conditions, rky_therapies
+        dict dataset, patient, pcond, condition, utility_tensor, half_enriched_tensor, condensed_utility_tensor
         np.ndarray patients_to_clusters, clusters_dist_vector, recommendations
 
     assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
     with open(filepath, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
+
+    mode = 'hybrid' # TODO find better way, input or the likes
 
     if dataset['Patients'][0]['id'] == '1': # datasetA.json case
         patient = dataset['Patients'][int(arg_patient_id) - 1]
@@ -353,17 +504,36 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
     print('-> Successfully parsed ' + filename)
 
-    utility_tensor = get_raw_utilities(dataset, filepath)
-    patients_to_clusters = cluster_patients(utility_tensor, len(dataset['Patients']), 100, 5, 500, filepath)
-    condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath)
-    ### get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, row = -1)
+    num_patients, num_conditions, num_therapies = len(dataset['Patients']), len(dataset['Conditions']), len(dataset['Therapies'])
+
+    utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
+    rky_patients = get_relevant_keys(dataset['Patients'], filepath, label='patients')
+    enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath)
+
+    '''
+    patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath, mode)
+    condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath, mode)
+    ### get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row = -1)
     med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]
     row = list(condensed_utility_tensor).index(med)
-    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, row=row)
-    num_therapies = len(dataset['Therapies'])
-    recommendations = recommend(patient, pcond, condition, num_therapies, condensed_utility_tensor, clusters_dist_vector)
-    print(recommendations) # TODO debug
-    print('-> Everything okay!')
+    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=row)
+    recommendations = recommend(patient, pcond, num_therapies, condensed_utility_tensor, clusters_dist_vector)
+    print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
+    '''
+
+    #print(get_relevant_keys(dataset['Conditions'], filepath, label='conditions'))
+    #print(get_relevant_keys(dataset['Therapies'], filepath, label='therapies'))
+    #print(get_relevant_keys(dataset['Patients'], filepath, label='patients'))
+    # TODO ie aserto ke patients kaj therapies devas havi chiam discrete kwim
+    # coming soon:
+    ### if mode == 'hybrid':
+    ###     rky_patients = get_relevant_keys(dataset['Patients'], filepath, label='patients')
+    ###     enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath)
+    ###     patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
+
+
+    # TODO make filepath code blocks more economic after finishing to write report and move shit to ../results/pkl
+
 
     return 0
 
