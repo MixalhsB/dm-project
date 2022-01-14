@@ -3,6 +3,7 @@
 from datetime import datetime as dt
 import os
 import sys
+import math
 import json
 import pickle
 import kmedoids
@@ -107,8 +108,8 @@ cdef tuple get_relevant_keys(list sub_dataset, str filepath, str label=''):
 cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
     cdef:
         size_t i, j, k, y, z, num_patients, num_conditions
-        float success, end, min_end, max_end, duration_in_days
-        str res_dir, filename, utl_path, hnr_path, pc_id, pc_kind, tr_pc_id, tr_th_id, tr_start, tr_end
+        float success, end, min_end, max_end, duration_in_days, diagnosed
+        str res_dir, filename, utl_path, hnr_path, pc_id, pc_kind, pc_diagnosed, tr_pc_id, tr_th_id, tr_start, tr_end
         set remaining_ks, matching_ks
         list pconditions, trials
         dict patient, utility_tensor
@@ -125,9 +126,9 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
     half_enriched_tensor = {} # only relevant in 'hybrid' mode; stays empty otherwise
     if mode == 'hybrid':
         min_end, max_end = 73048.0, 0.0 # a.k.a. initially 2099-12-31, 1900-01-01
-    num_patients, num_conditions = len(dataset['Patients']), len(dataset['Conditions'])
+    num_patients, num_conditions, num_therapies = len(dataset['Patients']), len(dataset['Conditions']), len(dataset['Therapies'])
     for i in range(num_patients): # iterate over patients
-        print('-> Building raw utility tensor' + ' and trial-recency tensor' if mode == 'hybrid' else '', i + 1, '/', num_patients, '...', end='\r')
+        print('-> Building raw utility tensor' + (' and trial-recency tensor' if mode == 'hybrid' else ''), i + 1, '/', num_patients, '...', end='\r')
         utility_tensor[i] = {}
         if mode == 'hybrid':
             half_enriched_tensor[i] = {}
@@ -138,6 +139,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
         for j in range(len(pconditions)): # iterate over patient's conditions
             pc_id = pconditions[j]['id']
             pc_kind = pconditions[j]['kind']
+            y = int(pc_kind.lstrip('Cond')) - 1
             matching_ks = set()
             for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
                 tr_pc_id = trials[k]['condition']
@@ -150,7 +152,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
                         end = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
                         min_end, max_end = min(end, min_end), max(end, max_end)
                     tr_th_id = trials[k]['therapy']
-                    y, z = int(pc_kind.lstrip('Cond')) - 1, int(tr_th_id.lstrip('Th')) - 1
+                    z = int(tr_th_id.lstrip('Th')) - 1
                     if y not in utility_tensor[i]:
                         utility_tensor[i][y] = {z: success}
                         if mode == 'hybrid':
@@ -164,6 +166,15 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
                         if mode == 'hybrid':
                             half_enriched_tensor[i][num_conditions + y][z] = max(end, half_enriched_tensor[i][num_conditions + y][z])
                     matching_ks.add(k)
+            if mode == 'hybrid':
+                if num_conditions + y not in half_enriched_tensor[i]: # condition had no corresponding trials
+                    half_enriched_tensor[i][num_conditions + y] = {}
+                pc_diagnosed = pconditions[j]['diagnosed']
+                diagnosed = float((dt.strptime(pc_diagnosed, '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
+                if num_therapies not in half_enriched_tensor[i][num_conditions + y]:
+                    half_enriched_tensor[i][num_conditions + y][num_therapies] = diagnosed
+                else:
+                    half_enriched_tensor[i][num_conditions + y][num_therapies] = max(diagnosed, half_enriched_tensor[i][num_conditions + y][num_therapies])
             remaining_ks = remaining_ks.difference(matching_ks)
     if mode == 'hybrid':
         assert max_end > 0.0
@@ -223,14 +234,14 @@ cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tu
     return enriched_tensor
 
 
-cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_tensor):
+cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utl_or_enr_tensor):
     cdef:
         size_t i, j, y1, z1, y2, z2
         dict patient_matrix_1, patient_matrix_2
         float dot_product, sum_squares_1, sum_squares_2, value_1, value_2
 
-    patient_matrix_1 = utility_tensor[patient_x_1]
-    patient_matrix_2 = utility_tensor[patient_x_2]
+    patient_matrix_1 = utl_or_enr_tensor[patient_x_1]
+    patient_matrix_2 = utl_or_enr_tensor[patient_x_2]
     dot_product = sum_squares_1 = sum_squares_2 = 0.0
     for i, y1 in enumerate(patient_matrix_1):
         for j, z1 in enumerate(patient_matrix_1[y1]):
@@ -250,7 +261,7 @@ cdef float cosine_distance(size_t patient_x_1, size_t patient_x_2, dict utility_
     return 1.0 - dot_product / np.sqrt(sum_squares_1 * sum_squares_2)
 
 
-cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath, str mode):
+cdef np.ndarray cluster_patients(dict utl_or_enr_tensor, size_t num_patients, size_t k, size_t n, size_t s, str filepath, str mode):
     cdef:
         size_t i, j, l, best_i, med, closest_med
         float cos_dist, lowest_cos_dist
@@ -285,7 +296,7 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
                 elif sorted_pair in memorized:
                     sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair]
                 else:
-                    cos_dist = cosine_distance(sample[j], sample[l], utility_tensor)
+                    cos_dist = cosine_distance(sample[j], sample[l], utl_or_enr_tensor)
                     sample_dist_matrix[j][l] = sample_dist_matrix[l][j] = memorized[sorted_pair] = cos_dist
         results[i][1] = kmedoids.fasterpam(sample_dist_matrix, k)
     best_i = min(enumerate(results), key=lambda x: x[1][1].loss)[0]
@@ -307,7 +318,7 @@ cdef np.ndarray cluster_patients(dict utility_tensor, size_t num_patients, size_
             if sorted_pair in memorized:
                 cos_dist = memorized[sorted_pair]
             else:
-                cos_dist = memorized[sorted_pair] = cosine_distance(i, med, utility_tensor)
+                cos_dist = memorized[sorted_pair] = cosine_distance(i, med, utl_or_enr_tensor)
             if cos_dist < lowest_cos_dist:
                 closest_med = med
                 lowest_cos_dist = cos_dist
@@ -371,7 +382,7 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
     return condensed_utility_tensor
 
 
-cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed_utility_tensor, str filepath, str mode, int row=-1): # row=-1: full matrix
+cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict condensed_utility_tensor, str filepath, str mode, int row=-1): # row=-1: full matrix
     cdef:
         size_t i, j, iter_count, med1, med2, num_clusters, num_iterations
         np.ndarray clusters_dist_matrix, row_is_precomputed
@@ -415,7 +426,7 @@ cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed
             elif row_is_precomputed[j]:
                 clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i]
             else:
-                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = cosine_distance(med1, med2, utility_tensor)
+                clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = cosine_distance(med1, med2, utl_or_enr_tensor)
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
@@ -429,37 +440,76 @@ cdef np.ndarray get_clusters_distance_matrix(dict utility_tensor, dict condensed
         for i in range(num_clusters):
             with open(dmt_path + str(i) + '.pickle', 'wb') as f:
                 pickle.dump(clusters_dist_matrix[i], f)
-            print(clusters_dist_matrix[i]) # TODO debug
         print("\n-> Saved full clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
 
     return clusters_dist_matrix[row] if row >= 0 else clusters_dist_matrix
 
 
-cdef np.ndarray recommend(dict patient, dict pcond, size_t num_therapies, dict condensed_utility_tensor, np.ndarray clusters_dist_vector):
+cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vector, dict condensed_utility_tensor, np.ndarray patients_to_clusters, size_t num_conditions, size_t num_therapies, str filepath, str mode, tuple rky_conditions=(), tuple rky_therapies=()):
     cdef:
-        size_t i, med, condition_y, therapy_z, previous_therapy_z
-        tuple item
-        list recommendations_list
+        size_t i, j, med, condition_y, therapy_z, previous_therapy_z
+        str disc_key, most_informative_key, val
+        float weight, val_count, val_weight
+        tuple item, relevant_keys_tuple
+        list recommendations_list, other_conds_same_key_val
         np.ndarray recommendations, random_sample
-        dict weighted_scaled_utilities, final_utilities
+        dict final_utilities, rel_keys_cond, key_vals_cond, rel_keys_th, key_vals_th, vals_to_counts, vals_to_avg_utilities
 
     condition_y = int(pcond['kind'].lstrip('Cond')) - 1
-    final_utilities = {}
-    for i, med in enumerate(condensed_utility_tensor):
-        weight = 1.01 - clusters_dist_vector[i]
-        if condition_y not in condensed_utility_tensor[med]:
-            final_utilities[therapy_z] = 0.0
+    if mode == 'hybrid':
+        rel_keys_cond, key_vals_cond = rky_conditions
+        assert len(rel_keys_cond['continuous']) == 0
+        relevant_keys_tuple = tuple(rel_keys_cond['discrete'])
+        if len(relevant_keys_tuple) > 0:
+            if len(relevant_keys_tuple) == 1:
+                most_informative_key = relevant_keys_tuple[0]
+            else:
+                most_informative_key = max((disc_key for disc_key in relevant_keys_tuple), key=lambda disc_key: math.comb(num_conditions, len(set(key_vals_cond[disc_key]))))
+            other_conds_same_key_val = [i for i in range(num_conditions) if i != condition_y and key_vals_cond[most_informative_key][i] == key_vals_cond[most_informative_key][condition_y]]
         else:
-            for therapy_z in condensed_utility_tensor[med][condition_y]:
+            other_conds_same_key_val = []
+    final_utilities = {}
+    for i in range(num_conditions):
+        if i != condition_y and (mode != 'hybrid' or i not in other_conds_same_key_val):
+            continue
+        for j, med in enumerate(condensed_utility_tensor):
+            if i not in condensed_utility_tensor[med]:
+                continue
+            weight = 1.01 - clusters_dist_vector[j] # 1.01 instead of 1.00 for smoothing, i.e. allowing also maximally distant clusters to contribute moderately
+            if mode == 'hybrid' and other_conds_same_key_val != []:
+                weight = weight * 0.8 if i == condition_y else weight * 0.2 / len(other_conds_same_key_val)
+            for therapy_z in condensed_utility_tensor[med][i]:
                 if therapy_z not in final_utilities:
-                    final_utilities[therapy_z] = weight * condensed_utility_tensor[med][condition_y][therapy_z]
+                    final_utilities[therapy_z] = weight * condensed_utility_tensor[med][i][therapy_z]
                 else:
-                    final_utilities[therapy_z] += weight * condensed_utility_tensor[med][condition_y][therapy_z]
+                    final_utilities[therapy_z] += weight * condensed_utility_tensor[med][i][therapy_z]
+    if mode == 'hybrid':
+        rel_keys_th, key_vals_th = rky_therapies
+        assert len(rel_keys_th['continuous']) == 0
+        relevant_keys_tuple = tuple(rel_keys_th['discrete'])
+        if len(relevant_keys_tuple) > 0:
+            if len(relevant_keys_tuple) == 1:
+                most_informative_key = relevant_keys_tuple[0]
+            else:
+                most_informative_key = max((disc_key for disc_key in relevant_keys_tuple), key=lambda disc_key: math.comb(num_therapies, len(set(key_vals_th[disc_key]))))
+            vals_to_counts = {}
+            vals_to_avg_utilities = {val: 0.0 for val in set(key_vals_th[most_informative_key])}
+            for therapy_z in final_utilities:
+                val = key_vals_th[most_informative_key][therapy_z]
+                vals_to_avg_utilities[val] += final_utilities[therapy_z] # sum
+            for val in vals_to_avg_utilities:
+                vals_to_counts[val] = key_vals_th[most_informative_key].count(val)
+                vals_to_avg_utilities[val] /= vals_to_counts[val] # average
+            for therapy_z in final_utilities:
+                val = key_vals_th[most_informative_key][therapy_z]
+                val_count = vals_to_counts[val]
+                val_weight = 0.2 * val_count / (val_count - 1) if val_count > 1 else 0.0
+                final_utilities[therapy_z] = (1 - val_weight) * final_utilities[therapy_z] + val_weight * vals_to_avg_utilities[val] # update
     for i in range(len(patient['trials'])):
         if pcond['id'] == patient['trials'][i]['condition']:
             previous_therapy_z = int(patient['trials'][i]['therapy'].lstrip('Th')) - 1
             if previous_therapy_z in final_utilities:
-                final_utilities[previous_therapy_z] = 0.0 # therapies already administered for same 'pc' should be dispreferred
+                final_utilities[previous_therapy_z] -= 1.01 * len(condensed_utility_tensor) # therapies already administered for same 'pc' should be dispreferred
     recommendations_list = list((item[0] for item in sorted((item for item in final_utilities.items()), key=lambda item: -item[1])))
     if len(recommendations_list) < 5: # only if length of supported list of therapies is smaller than 5, then fill up with random choices
         random_sample = np.random.choice(num_therapies, 10, replace=False)
@@ -475,12 +525,34 @@ cdef np.ndarray recommend(dict patient, dict pcond, size_t num_therapies, dict c
     return recommendations
 
 
-cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
+cdef np.ndarray recommend_overall_most_frequent_therapies_as_baseline(dict dataset):
+    cdef:
+        size_t i, therapy_z, num_patients, num_therapies, num_trials
+        dict frequencies
+        str tr_th_id
+
+    num_patients, num_therapies = len(dataset['Patients']), len(dataset['Therapies'])
+    frequencies = {}
+
+    for i in range(num_patients):
+        num_trials = len(dataset['Patients'][i]['trials'])
+        for j in range(num_trials):
+            tr_th_id = dataset['Patients'][i]['trials'][j]['therapy']
+            therapy_z = int(tr_th_id.lstrip('Th')) - 1
+            if therapy_z not in frequencies:
+                frequencies[therapy_z] = 1
+            else:
+                frequencies[therapy_z] += 1
+
+    return np.array(sorted([therapy_z for therapy_z in frequencies], key=lambda therapy_z: -frequencies[therapy_z])[:5])
+
+
+cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
         str filename, mode
         size_t med, row, therapy_z, num_patients, num_conditions, num_therapies
         tuple rky_patients, rky_conditions, rky_therapies
-        dict dataset, patient, pcond, condition, utility_tensor, half_enriched_tensor, condensed_utility_tensor
+        dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor, half_enriched_tensor, enriched_tensor
         np.ndarray patients_to_clusters, clusters_dist_vector, recommendations
 
     assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
@@ -489,6 +561,8 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
 
     mode = 'hybrid' # TODO find better way, input or the likes
 
+    assert dataset['Conditions'][0]['id'] == 'Cond1'
+    assert dataset['Therapies'][0]['id'] == 'Th1'
     if dataset['Patients'][0]['id'] == '1': # datasetA.json case
         patient = dataset['Patients'][int(arg_patient_id) - 1]
         assert arg_patient_id == patient['id']
@@ -496,7 +570,6 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
         assert dataset['Patients'][0]['id'] == 0 # datasetB.json case
         patient = dataset['Patients'][int(arg_patient_id)]
         assert int(arg_patient_id) == patient['id']
-    
     pcond = patient['conditions'][int(arg_pc_id.lstrip('pc')) - int(patient['conditions'][0]['id'].lstrip('pc'))]
     assert arg_pc_id == pcond['id']
     condition = dataset['Conditions'][int(pcond['kind'].lstrip('Cond')) - 1]
@@ -505,37 +578,43 @@ cdef int main(str filepath, str arg_patient_id, str arg_pc_id):
     print('-> Successfully parsed ' + filename)
 
     num_patients, num_conditions, num_therapies = len(dataset['Patients']), len(dataset['Conditions']), len(dataset['Therapies'])
+    assert num_therapies >= 5
 
     utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
     rky_patients = get_relevant_keys(dataset['Patients'], filepath, label='patients')
-    enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath)
-
-    '''
-    patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath, mode)
+    if mode == 'hybrid':
+        enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath)
+        patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
+    else:
+        patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath, mode)
     condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath, mode)
-    ### get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row = -1)
-    med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]
-    row = list(condensed_utility_tensor).index(med)
-    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=row)
-    recommendations = recommend(patient, pcond, num_therapies, condensed_utility_tensor, clusters_dist_vector)
-    print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
-    '''
 
-    #print(get_relevant_keys(dataset['Conditions'], filepath, label='conditions'))
-    #print(get_relevant_keys(dataset['Therapies'], filepath, label='therapies'))
-    #print(get_relevant_keys(dataset['Patients'], filepath, label='patients'))
-    # TODO ie aserto ke patients kaj therapies devas havi chiam discrete kwim
-    # coming soon:
+    ###
     ### if mode == 'hybrid':
-    ###     rky_patients = get_relevant_keys(dataset['Patients'], filepath, label='patients')
-    ###     enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath)
-    ###     patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
+    ###     get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row = -1) ### optional, do once TODO
+    ### else:
+    ###     get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=-1)  ### optional, do once TODO
+    ###
 
+    med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]  # dataset A vs. B format
+    row = list(condensed_utility_tensor).index(med)
+    if mode == 'hybrid':
+        clusters_dist_vector = get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row=row)
+    else:
+        clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=row)
 
-    # TODO make filepath code blocks more economic after finishing to write report and move shit to ../results/pkl
+    rky_conditions = get_relevant_keys(dataset['Conditions'], filepath, label='conditions') if mode == 'hybrid' else ()
+    rky_therapies = get_relevant_keys(dataset['Therapies'], filepath, label='therapies') if mode == 'hybrid' else ()
 
+    recommendations = recommend(patient, pcond, clusters_dist_vector, condensed_utility_tensor, patients_to_clusters, num_conditions, num_therapies,
+                                filepath, mode, rky_conditions=rky_conditions, rky_therapies=rky_therapies)
+    print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
 
-    return 0
+    # TODO restructure! tbc eval shit mode select keya
+    recommendations = recommend_overall_most_frequent_therapies_as_baseline(dataset)
+    print('-> Stupid recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
+
+    # TODO or maybe not: make filepath code blocks more economic after finishing to write report and move shit to ../results/pkl
 
 
 if __name__ == '__main__':
