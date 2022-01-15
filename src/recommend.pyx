@@ -25,9 +25,9 @@ cdef tuple get_directory_info(str filepath):
     return (res_dir, filename)
 
 
-cdef tuple get_relevant_keys(list sub_dataset, str filepath, str label=''):
+cdef tuple get_relevant_keys(list sub_dataset, str filepath, str mode, str label=''):
     cdef:
-        size_t i, num_relevant_keys
+        size_t i
         float float_val, minimum, maximum
         str str_val, key, other_key, key_type, res_dir, filename, rky_path
         set remaining_continuous_keys, str_vals_as_set
@@ -35,7 +35,7 @@ cdef tuple get_relevant_keys(list sub_dataset, str filepath, str label=''):
 
     if label:
         res_dir, filename = get_directory_info(filepath)
-        rky_path = '%s%s_rky_%s.pickle' % (res_dir, filename.rstrip('.json'), label)
+        rky_path = '%spkl/%s_rky_%s_%s.pickle' % (res_dir, filename.rstrip('.json'), label, mode)
         if os.path.exists(rky_path):
             with open(rky_path, 'rb') as f:
                 rel_keys, key_vals = pickle.load(f)
@@ -96,6 +96,8 @@ cdef tuple get_relevant_keys(list sub_dataset, str filepath, str label=''):
     if label:
         if not os.path.exists(res_dir):
             os.mkdir(res_dir)
+        if not os.path.exists(res_dir + 'pkl/'):
+            os.mkdir(res_dir + 'pkl/')
         with open(rky_path, 'wb') as f:
             pickle.dump((rel_keys, key_vals), f)
         print('-> Extracted and saved relevant keys for %s to ../%s' % (label, rky_path.rsplit('../', 1)[1]))
@@ -107,30 +109,30 @@ cdef tuple get_relevant_keys(list sub_dataset, str filepath, str label=''):
 
 cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
     cdef:
-        size_t i, j, k, y, z, num_patients, num_conditions
-        float success, end, min_end, max_end, duration_in_days, diagnosed
-        str res_dir, filename, utl_path, hnr_path, pc_id, pc_kind, pc_diagnosed, tr_pc_id, tr_th_id, tr_start, tr_end
+        size_t i, j, k, y, z, num_patients, num_conditions, num_therapies
+        float success, end, min_date, max_date, duration_in_days, diagnosed
+        str res_dir, filename, utl_path, pc_id, pc_kind, pc_diagnosed, tr_pc_id, tr_th_id, tr_start, tr_end
         set remaining_ks, matching_ks
         list pconditions, trials
         dict patient, utility_tensor
 
     res_dir, filename = get_directory_info(filepath)
-    utl_path = '%s%s_utl_raw_henr_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    utl_path = '%spkl/%s_utl_raw_henr_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
     if os.path.exists(utl_path):
         with open(utl_path, 'rb') as f:
             utility_tensor, half_enriched_tensor = pickle.load(f)
-        print('-> Loaded pre-computed raw utility tensor%s from ../' % (' and trial-recency tensor' if mode == 'hybrid' else '') + utl_path.rsplit('../', 1)[1])
+        print('-> Loaded pre-computed raw utility tensor%s from ../' % (' and trial-recency tensor' if mode.startswith('hybrid') else '') + utl_path.rsplit('../', 1)[1])
         return (utility_tensor, half_enriched_tensor)
 
     utility_tensor = {}
     half_enriched_tensor = {} # only relevant in 'hybrid' mode; stays empty otherwise
-    if mode == 'hybrid':
-        min_end, max_end = 73048.0, 0.0 # a.k.a. initially 2099-12-31, 1900-01-01
+    if mode.startswith('hybrid'):
+        min_date, max_date = 73048.0, 0.0 # a.k.a. initially 2099-12-31, 1900-01-01
     num_patients, num_conditions, num_therapies = len(dataset['Patients']), len(dataset['Conditions']), len(dataset['Therapies'])
     for i in range(num_patients): # iterate over patients
-        print('-> Building raw utility tensor' + (' and trial-recency tensor' if mode == 'hybrid' else ''), i + 1, '/', num_patients, '...', end='\r')
+        print('-> Building raw utility tensor' + (' and trial-recency tensor' if mode.startswith('hybrid') else ''), i + 1, '/', num_patients, '...', end='\r')
         utility_tensor[i] = {}
-        if mode == 'hybrid':
+        if mode.startswith('hybrid'):
             half_enriched_tensor[i] = {}
         patient = dataset['Patients'][i]
         pconditions = patient['conditions']
@@ -145,57 +147,60 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
                 tr_pc_id = trials[k]['condition']
                 if pc_id == tr_pc_id:
                     success = 0.01 * float(str(trials[k]['successful']).rstrip('%')) # cover both 100 and '100%'
-                    if mode == 'hybrid':
+                    if mode.startswith('hybrid'):
                         tr_start, tr_end = trials[k]['start'], trials[k]['end']
                         duration_in_days = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime(tr_start, '%Y%m%d')).days)
                         success /= 1 + np.log(1 + duration_in_days) # factor in inverse trial duration for success criterion
                         end = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
-                        min_end, max_end = min(end, min_end), max(end, max_end)
+                        min_date, max_date = min(end, min_date), max(end, max_date)
                     tr_th_id = trials[k]['therapy']
                     z = int(tr_th_id.lstrip('Th')) - 1
                     if y not in utility_tensor[i]:
                         utility_tensor[i][y] = {z: success}
-                        if mode == 'hybrid':
+                        if mode.startswith('hybrid'):
                             half_enriched_tensor[i][num_conditions + y] = {z: end}
                     elif z not in utility_tensor[i][y]:
                         utility_tensor[i][y][z] = success
-                        if mode == 'hybrid':
+                        if mode.startswith('hybrid'):
                             half_enriched_tensor[i][num_conditions + y][z] = end
                     else:
                         utility_tensor[i][y][z] = max(success, utility_tensor[i][y][z])
-                        if mode == 'hybrid':
+                        if mode.startswith('hybrid'):
                             half_enriched_tensor[i][num_conditions + y][z] = max(end, half_enriched_tensor[i][num_conditions + y][z])
                     matching_ks.add(k)
-            if mode == 'hybrid':
+            if mode.startswith('hybrid'):
                 if num_conditions + y not in half_enriched_tensor[i]: # condition had no corresponding trials
                     half_enriched_tensor[i][num_conditions + y] = {}
                 pc_diagnosed = pconditions[j]['diagnosed']
                 diagnosed = float((dt.strptime(pc_diagnosed, '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
+                min_date, max_date = min(diagnosed, min_date), max(diagnosed, max_date)
                 if num_therapies not in half_enriched_tensor[i][num_conditions + y]:
                     half_enriched_tensor[i][num_conditions + y][num_therapies] = diagnosed
                 else:
                     half_enriched_tensor[i][num_conditions + y][num_therapies] = max(diagnosed, half_enriched_tensor[i][num_conditions + y][num_therapies])
             remaining_ks = remaining_ks.difference(matching_ks)
-    if mode == 'hybrid':
-        assert max_end > 0.0
+    if mode.startswith('hybrid'):
+        assert max_date > 0.0
         print()
         for i in range(num_patients):
             print('-> Normalizing values in trial-recency tensor', i + 1, '/', num_patients, '...', end='\r')
             for y in half_enriched_tensor[i]:
                 for z in half_enriched_tensor[i][y]:
-                    half_enriched_tensor[i][y][z] -= min_end
-                    half_enriched_tensor[i][y][z] /= max_end
+                    half_enriched_tensor[i][y][z] -= min_date
+                    half_enriched_tensor[i][y][z] /= max_date
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
+    if not os.path.exists(res_dir + 'pkl/'):
+        os.mkdir(res_dir + 'pkl/')
     with open(utl_path, 'wb') as f:
         pickle.dump((utility_tensor, half_enriched_tensor), f)
-    print('\n-> Saved raw utility tensor%s to ../' % (' and trial-recency tensor' if mode == 'hybrid' else '') + utl_path.rsplit('../', 1)[1])
+    print('\n-> Saved raw utility tensor%s to ../' % (' and trial-recency tensor' if mode.startswith('hybrid') else '') + utl_path.rsplit('../', 1)[1])
 
     return (utility_tensor, half_enriched_tensor)
 
 
-cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tuple rky_patients, size_t num_conditions, str filepath):
+cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tuple rky_patients, size_t num_conditions, str filepath, str mode):
     cdef:
         size_t i, j, hash_key_value
         float minimum, maximum
@@ -203,7 +208,7 @@ cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tu
         dict enriched_tensor
 
     res_dir, filename = get_directory_info(filepath)
-    enr_path = '%s%s_enr.pickle' % (res_dir, filename.rstrip('.json'))
+    enr_path = '%spkl/%s_enr_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
     if os.path.exists(enr_path):
         with open(enr_path, 'rb') as f:
             enriched_tensor = pickle.load(f)
@@ -227,6 +232,8 @@ cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tu
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
+    if not os.path.exists(res_dir + 'pkl/'):
+        os.mkdir(res_dir + 'pkl/')
     with open(enr_path, 'wb') as f:
         pickle.dump(enriched_tensor, f)
     print('-> Created and saved enriched tensor to ../' + enr_path.rsplit('../', 1)[1])
@@ -270,10 +277,8 @@ cdef np.ndarray cluster_patients(dict utl_or_enr_tensor, size_t num_patients, si
         str res_dir, filename, p2c_path
         np.ndarray sample, sample_dist_matrix, results, medoids, patients_to_clusters
 
-    np.random.seed(123)
-
     res_dir, filename = get_directory_info(filepath)
-    p2c_path = '%s%s_p2c_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    p2c_path = '%spkl/%s_p2c_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
 
     if os.path.exists(p2c_path):
         with open(p2c_path, 'rb') as f:
@@ -326,6 +331,8 @@ cdef np.ndarray cluster_patients(dict utl_or_enr_tensor, size_t num_patients, si
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
+    if not os.path.exists(res_dir + 'pkl/'):
+        os.mkdir(res_dir + 'pkl/')
     with open(p2c_path, 'wb') as f:
         pickle.dump(patients_to_clusters, f)
     print('\n-> Saved computed clusters to ../' + p2c_path.rsplit('../', 1)[1])
@@ -340,7 +347,7 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
         str res_dir, filename, utl_path
 
     res_dir, filename = get_directory_info(filepath)
-    utl_path = '%s%s_utl_dense_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
+    utl_path = '%spkl/%s_utl_dense_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
     if os.path.exists(utl_path):
         with open(utl_path, 'rb') as f:
             condensed_utility_tensor = pickle.load(f)
@@ -375,6 +382,8 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
+    if not os.path.exists(res_dir + 'pkl/'):
+        os.mkdir(res_dir + 'pkl/')
     with open(utl_path, 'wb') as f:
         pickle.dump(condensed_utility_tensor, f)
     print('-> Created and saved condensed utility tensor to ../' + utl_path.rsplit('../', 1)[1])
@@ -384,12 +393,12 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
 
 cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict condensed_utility_tensor, str filepath, str mode, int row=-1): # row=-1: full matrix
     cdef:
-        size_t i, j, iter_count, med1, med2, num_clusters, num_iterations
+        size_t i, j, med1, med2, num_clusters
         np.ndarray clusters_dist_matrix, row_is_precomputed
         str res_dir, filename, dmt_path
 
     res_dir, filename = get_directory_info(filepath)
-    dmt_path = '%s%s_dmt_%s/' % (res_dir, filename.rstrip('.json'), mode)
+    dmt_path = '%spkl/%s_dmt_%s/' % (res_dir, filename.rstrip('.json'), mode)
     num_clusters = len(condensed_utility_tensor)
     clusters_dist_matrix = np.empty((num_clusters, num_clusters), dtype=float)
     row_is_precomputed = np.zeros(num_clusters, dtype=bool)
@@ -398,7 +407,8 @@ cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict conden
         if row >= 0 and os.path.exists(dmt_path + str(row) + '.pickle'):
             with open(dmt_path + str(row) + '.pickle', 'rb') as f:
                 clusters_dist_matrix[row] = pickle.load(f)
-            print("-> Loaded pre-computed cluster's distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+            if not '_eval' in mode:
+                print("-> Loaded pre-computed cluster's distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
             return clusters_dist_matrix[row]
 
         for i in range(num_clusters):
@@ -411,16 +421,12 @@ cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict conden
             print("-> Loaded full clusters' distance matrix from ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
             return clusters_dist_matrix
 
-    num_iterations = num_clusters if row >= 0 else num_clusters * (num_clusters + 1) // 2
-    iter_count = 0
     for i, med1 in enumerate(condensed_utility_tensor):
         if row >= 0 and i != row or row_is_precomputed[i]:
             continue
         for j, med2 in enumerate(condensed_utility_tensor):
             if row == -1 and i > j:
                 continue
-            iter_count += 1
-            print('-> Computing distances between clusters', iter_count, '/', num_iterations, '...', end='\r')
             if i == j:
                 clusters_dist_matrix[i][j] = clusters_dist_matrix[j][i] = 0.0
             elif row_is_precomputed[j]:
@@ -430,22 +436,25 @@ cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict conden
 
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
+    if not os.path.exists(res_dir + 'pkl/'):
+        os.mkdir(res_dir + 'pkl/')
     if not os.path.exists(dmt_path):
         os.mkdir(dmt_path)
     if row >= 0:
         with open(dmt_path + str(row) + '.pickle', 'wb') as f:
             pickle.dump(clusters_dist_matrix[row], f)
-        print("\n-> Saved cluster's distance vector to ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+        print("-> Created and saved cluster's distance vector to ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
     else:
         for i in range(num_clusters):
             with open(dmt_path + str(i) + '.pickle', 'wb') as f:
                 pickle.dump(clusters_dist_matrix[i], f)
-        print("\n-> Saved full clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
+        print("-> Created and saved full clusters' distance matrix to ../" + dmt_path.rsplit('../', 1)[1] + '*.pickle')
 
     return clusters_dist_matrix[row] if row >= 0 else clusters_dist_matrix
 
 
-cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vector, dict condensed_utility_tensor, np.ndarray patients_to_clusters, size_t num_conditions, size_t num_therapies, str filepath, str mode, tuple rky_conditions=(), tuple rky_therapies=()):
+cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vector, dict condensed_utility_tensor, size_t num_conditions, size_t num_therapies,
+                          str mode, tuple rky_conditions=(), tuple rky_therapies=()):
     cdef:
         size_t i, j, med, condition_y, therapy_z, previous_therapy_z
         str disc_key, most_informative_key, val
@@ -456,7 +465,7 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
         dict final_utilities, rel_keys_cond, key_vals_cond, rel_keys_th, key_vals_th, vals_to_counts, vals_to_avg_utilities
 
     condition_y = int(pcond['kind'].lstrip('Cond')) - 1
-    if mode == 'hybrid':
+    if mode.startswith('hybrid'):
         rel_keys_cond, key_vals_cond = rky_conditions
         assert len(rel_keys_cond['continuous']) == 0
         relevant_keys_tuple = tuple(rel_keys_cond['discrete'])
@@ -465,7 +474,8 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
                 most_informative_key = relevant_keys_tuple[0]
             else:
                 most_informative_key = max((disc_key for disc_key in relevant_keys_tuple), key=lambda disc_key: math.comb(num_conditions, len(set(key_vals_cond[disc_key]))))
-            other_conds_same_key_val = [i for i in range(num_conditions) if i != condition_y and key_vals_cond[most_informative_key][i] == key_vals_cond[most_informative_key][condition_y]]
+            other_conds_same_key_val = [i for i in range(num_conditions) if i != condition_y and key_vals_cond[most_informative_key][i] == \
+                                        key_vals_cond[most_informative_key][condition_y]]
         else:
             other_conds_same_key_val = []
     final_utilities = {}
@@ -476,14 +486,14 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
             if i not in condensed_utility_tensor[med]:
                 continue
             weight = 1.01 - clusters_dist_vector[j] # 1.01 instead of 1.00 for smoothing, i.e. allowing also maximally distant clusters to contribute moderately
-            if mode == 'hybrid' and other_conds_same_key_val != []:
+            if mode.startswith('hybrid') and other_conds_same_key_val != []:
                 weight = weight * 0.8 if i == condition_y else weight * 0.2 / len(other_conds_same_key_val)
             for therapy_z in condensed_utility_tensor[med][i]:
                 if therapy_z not in final_utilities:
                     final_utilities[therapy_z] = weight * condensed_utility_tensor[med][i][therapy_z]
                 else:
                     final_utilities[therapy_z] += weight * condensed_utility_tensor[med][i][therapy_z]
-    if mode == 'hybrid':
+    if mode.startswith('hybrid'):
         rel_keys_th, key_vals_th = rky_therapies
         assert len(rel_keys_th['continuous']) == 0
         relevant_keys_tuple = tuple(rel_keys_th['discrete'])
@@ -549,74 +559,167 @@ cdef np.ndarray recommend_overall_most_frequent_therapies_as_baseline(dict datas
 
 cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
     cdef:
-        str filename, mode
-        size_t med, row, therapy_z, num_patients, num_conditions, num_therapies
+        str filename, mode, res_dir, eval_path
+        float accuracy
+        size_t i, j, med, row, eval, patient_x, pcond_y, therapy_z, pred_therapy_z, num_patients, num_conditions, num_therapies
         tuple rky_patients, rky_conditions, rky_therapies
-        dict dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor, half_enriched_tensor, enriched_tensor
-        np.ndarray patients_to_clusters, clusters_dist_vector, recommendations
+        list deleted_trials, test_triples, predictions, numbers_testcases, accuracies
+        dict dataset_copy, trial, dataset, patient, pcond, condition, utility_tensor, condensed_utility_tensor, half_enriched_tensor, enriched_tensor
+        np.ndarray test_set, patients_to_clusters, clusters_dist_vector, recommendations
 
-    assert os.path.exists(filepath) and arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
+    assert os.path.exists(filepath)
+    np.random.seed(123)
+
+    if not arg_patient_id:
+        print('***********************')
+        print('* E V A L U A T I O N *')
+        print('***********************')
+        if arg_pc_id:
+            assert arg_pc_id.startswith('mode=')
+            mode = arg_pc_id.lstrip('mode=')
+            assert mode in ('baseline', 'simple', 'hybrid')
+            print('-> Selected method:', mode)
+            eval = 2
+        else:
+            eval = 1
+    else:
+        assert arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
+        eval = 0
+    if eval < 2:
+        while True:
+            mode = input('-> Please select method (b=baseline, s=simple, h=hybrid): ')
+            if mode.lower() == 'b':
+                mode = 'baseline'
+                break
+            elif mode.lower() == 's':
+                mode = 'simple'
+                break
+            elif mode.lower() == 'h':
+                mode = 'hybrid'
+                break
+            print('Invalid method.')
     with open(filepath, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
-
-    mode = 'hybrid' # TODO find better way, input or the likes
-
     assert dataset['Conditions'][0]['id'] == 'Cond1'
     assert dataset['Therapies'][0]['id'] == 'Th1'
-    if dataset['Patients'][0]['id'] == '1': # datasetA.json case
-        patient = dataset['Patients'][int(arg_patient_id) - 1]
-        assert arg_patient_id == patient['id']
-    else:
-        assert dataset['Patients'][0]['id'] == 0 # datasetB.json case
-        patient = dataset['Patients'][int(arg_patient_id)]
-        assert int(arg_patient_id) == patient['id']
-    pcond = patient['conditions'][int(arg_pc_id.lstrip('pc')) - int(patient['conditions'][0]['id'].lstrip('pc'))]
-    assert arg_pc_id == pcond['id']
-    condition = dataset['Conditions'][int(pcond['kind'].lstrip('Cond')) - 1]
-    assert pcond['kind'] == condition['id']
+    assert dataset['Patients'][0]['id'] in ('1', 0)
+    if not eval:
+        if dataset['Patients'][0]['id'] == '1': # datasetA.json case
+            patient = dataset['Patients'][int(arg_patient_id) - 1]
+            assert arg_patient_id == patient['id']
+        else:
+            assert dataset['Patients'][0]['id'] == 0 # datasetB.json case
+            patient = dataset['Patients'][int(arg_patient_id)]
+            assert int(arg_patient_id) == patient['id']
+        pcond = patient['conditions'][int(arg_pc_id.lstrip('pc')) - int(patient['conditions'][0]['id'].lstrip('pc'))]
+        assert arg_pc_id == pcond['id']
+        condition = dataset['Conditions'][int(pcond['kind'].lstrip('Cond')) - 1]
+        assert pcond['kind'] == condition['id']
     filename = filepath.replace('\\', '/').rsplit('/', 1)[1] if '/' in filepath or '\\' in filepath else filepath
     print('-> Successfully parsed ' + filename)
-
     num_patients, num_conditions, num_therapies = len(dataset['Patients']), len(dataset['Conditions']), len(dataset['Therapies'])
     assert num_therapies >= 5
+    if eval:
+        accuracies = []
+        numbers_testcases = []
+    for i in range(10 if eval else 1):
+        if eval:
+            if i > 0:
+                assert len(test_triples) == len(deleted_trials)
+                for j, trial in enumerate(deleted_trials):
+                    dataset['Patients'][test_triples[j][0]]['trials'].append(trial)
+                    dataset['Patients'][test_triples[j][0]]['trials'].sort(key=lambda trial: trial['id'])
+                mode = mode.split('_eval')[0]
+            mode += '_eval%d' % i
+            print('\n-> Starting evaluation round %d ...' % (i + 1))
+            test_set = np.random.choice(num_patients, num_patients // 5, replace=False)
+            deleted_trials = []
+            test_triples = []
+            predictions = []
+            for patient_x in test_set:
+                if len(dataset['Patients'][patient_x]['trials']) == 0:
+                    continue
+                trial = max(dataset['Patients'][patient_x]['trials'], key=lambda trial: trial['start'])
+                pcond_y = int(trial['condition'].lstrip('pc')) - 1
+                therapy_z = int(trial['therapy'].lstrip('Th')) - 1
+                test_triples.append((patient_x, pcond_y, therapy_z))
+                dataset['Patients'][patient_x]['trials'].remove(trial)
+                deleted_trials.append(trial)
+            assert len(test_triples) > 0
+        if mode.startswith('baseline'):
+            recommendations = recommend_overall_most_frequent_therapies_as_baseline(dataset)
+            if not eval:
+                print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
+                return
 
-    utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
-    rky_patients = get_relevant_keys(dataset['Patients'], filepath, label='patients')
-    if mode == 'hybrid':
-        enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath)
-        patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
-    else:
-        patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath, mode)
-    condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath, mode)
+            for j in range(len(test_triples)):
+                predictions.append(recommendations[0])
+        else:
+            utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
+            rky_patients = get_relevant_keys(dataset['Patients'], filepath, mode, label='patients')
+            if mode == 'hybrid':
+                enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath, mode)
+                patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
+            else:
+                patients_to_clusters = cluster_patients(utility_tensor, num_patients, 100, 5, 500, filepath, mode)
+            condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath, mode)
+            if eval:
+                if mode.startswith('hybrid'):
+                    get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row = -1)
+                else:
+                    get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=-1)
+            for j in range(len(test_triples) if eval else 1):
+                if eval:
+                    patient = dataset['Patients'][test_triples[j][0]]
+                    pcond = patient['conditions'][test_triples[j][1] - (int(patient['conditions'][0]['id'].lstrip('pc')) - 1)]
+                    assert pcond['id'] == 'pc' + str(test_triples[j][1] + 1)
+                    print('-> Generating recommendations', j + 1, '/', len(test_triples), '...', end='\r')
+                med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]
+                row = list(condensed_utility_tensor).index(med)
+                if mode.startswith('hybrid'):
+                    clusters_dist_vector = get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row=row)
+                else:
+                    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=row)
+                rky_conditions = get_relevant_keys(dataset['Conditions'], filepath, mode, label='conditions') if mode.startswith('hybrid') else ()
+                rky_therapies = get_relevant_keys(dataset['Therapies'], filepath, mode, label='therapies') if mode.startswith('hybrid') else ()
+                recommendations = recommend(patient, pcond, clusters_dist_vector, condensed_utility_tensor, num_conditions, num_therapies, mode,
+                                            rky_conditions=rky_conditions, rky_therapies=rky_therapies)
+                if not eval:
+                    print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
+                    return
 
-    ###
-    ### if mode == 'hybrid':
-    ###     get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row = -1) ### optional, do once TODO
-    ### else:
-    ###     get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=-1)  ### optional, do once TODO
-    ###
+                predictions.append(recommendations[0])
+            print()
+        assert len(test_triples) == len(predictions)
+        accuracy = 0.0
+        for (patient_x, pcond_y, therapy_z), pred_therapy_z in zip(test_triples, predictions):
+            if therapy_z == pred_therapy_z:
+                accuracy += 1.0
+        accuracy /= len(predictions)
+        accuracies.append(accuracy)
+        numbers_testcases.append(len(predictions))
+        print('-> Accuracy for round %d involving %d test cases was: %0.3f' % (i + 1, len(predictions), accuracy))
+    accuracy = sum(accuracies) / len(accuracies)
+    print('\n-> OVERALL ACCURACY: %0.3f' % accuracy)
+    res_dir, filename = get_directory_info(filepath)
+    eval_path = '%seval_%s_%s.tsv' % (res_dir, filename.rstrip('.json'), mode.split('_eval')[0])
+    if not os.path.exists(res_dir):
+        os.mkdir(res_dir)
+    with open(eval_path, 'w', encoding='utf-8') as f:
+        f.write('round\ttest_cases\taccuracy\n')
+        f.write('overall\t%d\t%0.3f\n' % (sum(numbers_testcases), accuracy))
+        for i in range(len(accuracies)):
+            f.write('%d\t%d\t%0.3f\n' % (i + 1, numbers_testcases[i], accuracies[i]))
+    print('-> Exported evaluation summary to', eval_path)
 
-    med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]  # dataset A vs. B format
-    row = list(condensed_utility_tensor).index(med)
-    if mode == 'hybrid':
-        clusters_dist_vector = get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row=row)
-    else:
-        clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=row)
-
-    rky_conditions = get_relevant_keys(dataset['Conditions'], filepath, label='conditions') if mode == 'hybrid' else ()
-    rky_therapies = get_relevant_keys(dataset['Therapies'], filepath, label='therapies') if mode == 'hybrid' else ()
-
-    recommendations = recommend(patient, pcond, clusters_dist_vector, condensed_utility_tensor, patients_to_clusters, num_conditions, num_therapies,
-                                filepath, mode, rky_conditions=rky_conditions, rky_therapies=rky_therapies)
-    print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
-
-    # TODO restructure! tbc eval shit mode select keya
-    recommendations = recommend_overall_most_frequent_therapies_as_baseline(dataset)
-    print('-> Stupid recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
-
-    # TODO or maybe not: make filepath code blocks more economic after finishing to write report and move shit to ../results/pkl
+    return
 
 
 if __name__ == '__main__':
-    assert len(sys.argv) == 4
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    if len(sys.argv) == 3 and sys.argv[2] == '--eval':
+        main(sys.argv[1], '', '')
+    elif len(sys.argv) == 5 and (sys.argv[2], sys.argv[3]) == ('--eval', '-m'):
+        main(sys.argv[1], '', 'mode=' + sys.argv[4])
+    else:
+        assert len(sys.argv) == 4
+        main(sys.argv[1], sys.argv[2], sys.argv[3])
