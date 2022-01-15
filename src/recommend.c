@@ -7528,7 +7528,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
  *         for y in utility_tensor[i]:
  *             for z in utility_tensor[i][y]:             # <<<<<<<<<<<<<<
  *                 utility_tensor[i][y][z] -= min_success
- *                 utility_tensor[i][y][z] /= max_success
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)
  */
       __pyx_t_3 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
@@ -7586,7 +7586,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
  *         for y in utility_tensor[i]:
  *             for z in utility_tensor[i][y]:
  *                 utility_tensor[i][y][z] -= min_success             # <<<<<<<<<<<<<<
- *                 utility_tensor[i][y][z] /= max_success
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)
  *     if mode.startswith('hybrid'):
  */
         __pyx_t_3 = __Pyx_PyInt_FromSize_t(__pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
@@ -7613,7 +7613,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
         /* "recommend.pyx":191
  *             for z in utility_tensor[i][y]:
  *                 utility_tensor[i][y][z] -= min_success
- *                 utility_tensor[i][y][z] /= max_success             # <<<<<<<<<<<<<<
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)             # <<<<<<<<<<<<<<
  *     if mode.startswith('hybrid'):
  *         assert max_date > 0.0
  */
@@ -7628,7 +7628,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
         __pyx_t_22 = __pyx_v_z;
         __pyx_t_26 = __Pyx_GetItemInt(__pyx_t_3, __pyx_t_22, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 0); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 191, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_26);
-        __pyx_t_27 = PyFloat_FromDouble(__pyx_v_max_success); if (unlikely(!__pyx_t_27)) __PYX_ERR(0, 191, __pyx_L1_error)
+        __pyx_t_27 = PyFloat_FromDouble((__pyx_v_max_success - __pyx_v_min_success)); if (unlikely(!__pyx_t_27)) __PYX_ERR(0, 191, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_27);
         __pyx_t_1 = __Pyx_PyNumber_InPlaceDivide(__pyx_t_26, __pyx_t_27); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
@@ -7643,7 +7643,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
  *         for y in utility_tensor[i]:
  *             for z in utility_tensor[i][y]:             # <<<<<<<<<<<<<<
  *                 utility_tensor[i][y][z] -= min_success
- *                 utility_tensor[i][y][z] /= max_success
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)
  */
       }
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -7661,7 +7661,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
 
   /* "recommend.pyx":192
  *                 utility_tensor[i][y][z] -= min_success
- *                 utility_tensor[i][y][z] /= max_success
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)
  *     if mode.startswith('hybrid'):             # <<<<<<<<<<<<<<
  *         assert max_date > 0.0
  *         print()
@@ -7674,7 +7674,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
   if ((__pyx_t_6 != 0)) {
 
     /* "recommend.pyx":193
- *                 utility_tensor[i][y][z] /= max_success
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)
  *     if mode.startswith('hybrid'):
  *         assert max_date > 0.0             # <<<<<<<<<<<<<<
  *         print()
@@ -7807,7 +7807,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
  *             for y in half_enriched_tensor[i]:
  *                 for z in half_enriched_tensor[i][y]:             # <<<<<<<<<<<<<<
  *                     half_enriched_tensor[i][y][z] -= min_date
- *                     half_enriched_tensor[i][y][z] /= max_date
+ *                     half_enriched_tensor[i][y][z] /= (max_date - min_date)
  */
         __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_half_enriched_tensor, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
@@ -7862,7 +7862,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
  *             for y in half_enriched_tensor[i]:
  *                 for z in half_enriched_tensor[i][y]:
  *                     half_enriched_tensor[i][y][z] -= min_date             # <<<<<<<<<<<<<<
- *                     half_enriched_tensor[i][y][z] /= max_date
+ *                     half_enriched_tensor[i][y][z] /= (max_date - min_date)
  * 
  */
           __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_half_enriched_tensor, __pyx_v_i, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 199, __pyx_L1_error)
@@ -7886,7 +7886,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
           /* "recommend.pyx":200
  *                 for z in half_enriched_tensor[i][y]:
  *                     half_enriched_tensor[i][y][z] -= min_date
- *                     half_enriched_tensor[i][y][z] /= max_date             # <<<<<<<<<<<<<<
+ *                     half_enriched_tensor[i][y][z] /= (max_date - min_date)             # <<<<<<<<<<<<<<
  * 
  *     if not os.path.exists(bin_dir):
  */
@@ -7898,7 +7898,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
           __pyx_t_22 = __pyx_v_z;
           __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_26, __pyx_t_22, size_t, 0, __Pyx_PyInt_FromSize_t, 0, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_27 = PyFloat_FromDouble(__pyx_v_max_date); if (unlikely(!__pyx_t_27)) __PYX_ERR(0, 200, __pyx_L1_error)
+          __pyx_t_27 = PyFloat_FromDouble((__pyx_v_max_date - __pyx_v_min_date)); if (unlikely(!__pyx_t_27)) __PYX_ERR(0, 200, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_27);
           __pyx_t_3 = __Pyx_PyNumber_InPlaceDivide(__pyx_t_1, __pyx_t_27); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
@@ -7913,7 +7913,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
  *             for y in half_enriched_tensor[i]:
  *                 for z in half_enriched_tensor[i][y]:             # <<<<<<<<<<<<<<
  *                     half_enriched_tensor[i][y][z] -= min_date
- *                     half_enriched_tensor[i][y][z] /= max_date
+ *                     half_enriched_tensor[i][y][z] /= (max_date - min_date)
  */
         }
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -7931,7 +7931,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
 
     /* "recommend.pyx":192
  *                 utility_tensor[i][y][z] -= min_success
- *                 utility_tensor[i][y][z] /= max_success
+ *                 utility_tensor[i][y][z] /= (max_success - min_success)
  *     if mode.startswith('hybrid'):             # <<<<<<<<<<<<<<
  *         assert max_date > 0.0
  *         print()
@@ -7939,7 +7939,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
   }
 
   /* "recommend.pyx":202
- *                     half_enriched_tensor[i][y][z] /= max_date
+ *                     half_enriched_tensor[i][y][z] /= (max_date - min_date)
  * 
  *     if not os.path.exists(bin_dir):             # <<<<<<<<<<<<<<
  *         os.mkdir(bin_dir)
@@ -8003,7 +8003,7 @@ static PyObject *__pyx_f_9recommend_get_raw_tensors(PyObject *__pyx_v_dataset, P
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
     /* "recommend.pyx":202
- *                     half_enriched_tensor[i][y][z] /= max_date
+ *                     half_enriched_tensor[i][y][z] /= (max_date - min_date)
  * 
  *     if not os.path.exists(bin_dir):             # <<<<<<<<<<<<<<
  *         os.mkdir(bin_dir)
@@ -8840,7 +8840,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
  *     for i in enriched_tensor:
  *         for j, (key, (minimum, maximum)) in enumerate(rky_patients[0]['continuous'].items()):             # <<<<<<<<<<<<<<
  *             if num_conditions * 2 not in enriched_tensor[i]:
- *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}
+ *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / (maximum - minimum)}
  */
     __pyx_t_17 = 0;
     __pyx_t_18 = 0;
@@ -8928,7 +8928,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
  *     for i in enriched_tensor:
  *         for j, (key, (minimum, maximum)) in enumerate(rky_patients[0]['continuous'].items()):
  *             if num_conditions * 2 not in enriched_tensor[i]:             # <<<<<<<<<<<<<<
- *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}
+ *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / (maximum - minimum)}
  *             else:
  */
       __pyx_t_3 = __Pyx_PyInt_FromSize_t((__pyx_v_num_conditions * 2)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
@@ -8951,9 +8951,9 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
         /* "recommend.pyx":233
  *         for j, (key, (minimum, maximum)) in enumerate(rky_patients[0]['continuous'].items()):
  *             if num_conditions * 2 not in enriched_tensor[i]:
- *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}             # <<<<<<<<<<<<<<
+ *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / (maximum - minimum)}             # <<<<<<<<<<<<<<
  *             else:
- *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum
+ *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / (maximum - minimum)
  */
         __pyx_t_8 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
@@ -8974,7 +8974,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
         __Pyx_GOTREF(__pyx_t_26);
         __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
         __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
-        __pyx_t_21 = PyFloat_FromDouble(__pyx_v_maximum); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 233, __pyx_L1_error)
+        __pyx_t_21 = PyFloat_FromDouble((__pyx_v_maximum - __pyx_v_minimum)); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_21);
         __pyx_t_22 = __Pyx_PyNumber_Divide(__pyx_t_26, __pyx_t_21); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_22);
@@ -9001,16 +9001,16 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
  *     for i in enriched_tensor:
  *         for j, (key, (minimum, maximum)) in enumerate(rky_patients[0]['continuous'].items()):
  *             if num_conditions * 2 not in enriched_tensor[i]:             # <<<<<<<<<<<<<<
- *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}
+ *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / (maximum - minimum)}
  *             else:
  */
         goto __pyx_L24;
       }
 
       /* "recommend.pyx":235
- *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}
+ *                 enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / (maximum - minimum)}
  *             else:
- *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum             # <<<<<<<<<<<<<<
+ *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / (maximum - minimum)             # <<<<<<<<<<<<<<
  *         for j, key in enumerate(rky_patients[0]['discrete']):
  *             hash_key_value = hash((key, rky_patients[1][key][i]))
  */
@@ -9030,7 +9030,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
         __Pyx_GOTREF(__pyx_t_22);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        __pyx_t_8 = PyFloat_FromDouble(__pyx_v_maximum); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 235, __pyx_L1_error)
+        __pyx_t_8 = PyFloat_FromDouble((__pyx_v_maximum - __pyx_v_minimum)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 235, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __pyx_t_3 = __Pyx_PyNumber_Divide(__pyx_t_22, __pyx_t_8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
@@ -9059,7 +9059,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
 
     /* "recommend.pyx":236
  *             else:
- *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum
+ *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / (maximum - minimum)
  *         for j, key in enumerate(rky_patients[0]['discrete']):             # <<<<<<<<<<<<<<
  *             hash_key_value = hash((key, rky_patients[1][key][i]))
  *             if num_conditions * 2 + 1 not in enriched_tensor[i]:
@@ -9118,7 +9118,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
       __pyx_t_17 = (__pyx_t_17 + 1);
 
       /* "recommend.pyx":237
- *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum
+ *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / (maximum - minimum)
  *         for j, key in enumerate(rky_patients[0]['discrete']):
  *             hash_key_value = hash((key, rky_patients[1][key][i]))             # <<<<<<<<<<<<<<
  *             if num_conditions * 2 + 1 not in enriched_tensor[i]:
@@ -9234,7 +9234,7 @@ static PyObject *__pyx_f_9recommend_get_enriched_tensor(PyObject *__pyx_v_utilit
 
       /* "recommend.pyx":236
  *             else:
- *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum
+ *                 enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / (maximum - minimum)
  *         for j, key in enumerate(rky_patients[0]['discrete']):             # <<<<<<<<<<<<<<
  *             hash_key_value = hash((key, rky_patients[1][key][i]))
  *             if num_conditions * 2 + 1 not in enriched_tensor[i]:

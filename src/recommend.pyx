@@ -188,7 +188,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
         for y in utility_tensor[i]:
             for z in utility_tensor[i][y]:
                 utility_tensor[i][y][z] -= min_success
-                utility_tensor[i][y][z] /= max_success
+                utility_tensor[i][y][z] /= (max_success - min_success)
     if mode.startswith('hybrid'):
         assert max_date > 0.0
         print()
@@ -197,7 +197,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
             for y in half_enriched_tensor[i]:
                 for z in half_enriched_tensor[i][y]:
                     half_enriched_tensor[i][y][z] -= min_date
-                    half_enriched_tensor[i][y][z] /= max_date
+                    half_enriched_tensor[i][y][z] /= (max_date - min_date)
 
     if not os.path.exists(bin_dir):
         os.mkdir(bin_dir)
@@ -230,9 +230,9 @@ cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tu
     for i in enriched_tensor:
         for j, (key, (minimum, maximum)) in enumerate(rky_patients[0]['continuous'].items()):
             if num_conditions * 2 not in enriched_tensor[i]:
-                enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / maximum}
+                enriched_tensor[i][num_conditions * 2] = {j: (rky_patients[1][key][i] - minimum) / (maximum - minimum)}
             else:
-                enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / maximum
+                enriched_tensor[i][num_conditions * 2][j] = (rky_patients[1][key][i] - minimum) / (maximum - minimum)
         for j, key in enumerate(rky_patients[0]['discrete']):
             hash_key_value = hash((key, rky_patients[1][key][i]))
             if num_conditions * 2 + 1 not in enriched_tensor[i]:
