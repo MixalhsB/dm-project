@@ -735,7 +735,6 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
         hard_accuracies.append(hard_accuracy)
         soft_accuracies.append(soft_accuracy)
         numbers_testcases.append(len(predictions))
-        print('i am here')  # DEBUG TODO
         print('-> Hard accuracy over %d test cases: %0.3f' % (len(predictions), hard_accuracy))
         print('-> Soft accuracy over %d test cases: %0.3f' % (len(predictions), soft_accuracy))
     hard_accuracy = sum(hard_accuracies) / len(hard_accuracies)
