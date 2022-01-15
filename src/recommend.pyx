@@ -657,7 +657,7 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                 predictions.append(recommendations[0])
         else:
             utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
-            if mode == 'hybrid':
+            if mode.startswith('hybrid'):
                 rky_patients = get_relevant_keys(dataset['Patients'], filepath, mode, label='patients')
                 enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath, mode)
                 patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
