@@ -277,7 +277,7 @@ cdef np.ndarray cluster_patients(dict utl_or_enr_tensor, size_t num_patients, si
         str res_dir, filename, p2c_path
         np.ndarray sample, sample_dist_matrix, results, medoids, patients_to_clusters
 
-    np.random.seed(123)
+    np.random.seed(123) # arbitrary
     res_dir, filename = get_directory_info(filepath)
     p2c_path = '%spkl/%s_p2c_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
 
@@ -468,8 +468,6 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
         np.ndarray recommendations, random_sample
         dict final_utilities, rel_keys_cond, key_vals_cond, rel_keys_th, key_vals_th, vals_to_counts, vals_to_avg_utilities
 
-    np.random.seed(234)
-
     condition_y = int(pcond['kind'].lstrip('Cond')) - 1
     if mode.startswith('hybrid'):
         rel_keys_cond, key_vals_cond = rky_conditions
@@ -528,6 +526,7 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
                 final_utilities[previous_therapy_z] -= 1.01 * len(condensed_utility_tensor) # therapies already administered for same 'pc' should be dispreferred
     recommendations_list = list((item[0] for item in sorted((item for item in final_utilities.items()), key=lambda item: -item[1])))
     if len(recommendations_list) < 5: # only if length of supported list of therapies is smaller than 5, then fill up with random choices
+        np.random.seed(234) # arbitrary
         random_sample = np.random.choice(num_therapies, 10, replace=False)
         for i in range(10):
             if random_sample[i] not in recommendations_list:
@@ -574,7 +573,6 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
         np.ndarray test_set, patients_to_clusters, clusters_dist_vector, recommendations
 
     assert os.path.exists(filepath)
-    np.random.seed(456)
 
     if not arg_patient_id and not arg_pc_id:
         print('***********************')
@@ -634,6 +632,7 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                 mode = mode.split('_eval')[0]
             mode += '_eval%d' % i
             print('\n-> Starting evaluation round %d ...' % (i + 1))
+            np.random.seed(456 + i) # arbitrary
             test_set = np.random.choice(num_patients, num_patients // 5, replace=False)
             deleted_trials = []
             test_triples = []
@@ -658,8 +657,8 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                 predictions.append(recommendations[0])
         else:
             utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
-            rky_patients = get_relevant_keys(dataset['Patients'], filepath, mode, label='patients')
             if mode == 'hybrid':
+                rky_patients = get_relevant_keys(dataset['Patients'], filepath, mode, label='patients')
                 enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath, mode)
                 patients_to_clusters = cluster_patients(enriched_tensor, num_patients, 100, 5, 500, filepath, mode)
             else:
