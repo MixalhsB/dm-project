@@ -391,11 +391,15 @@ cdef dict condense_utilities(dict utility_tensor, np.ndarray patients_to_cluster
     return condensed_utility_tensor
 
 
-cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict condensed_utility_tensor, str filepath, str mode, int row=-1): # row=-1: full matrix
+cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict condensed_utility_tensor, str filepath, str mode, int row=-1, # row=-1: get full matrix
+                                             np.ndarray matrix=np.array(0)): # matrix: just in case we have pre-computed matrix
     cdef:
         size_t i, j, med1, med2, num_clusters
         np.ndarray clusters_dist_matrix, row_is_precomputed
         str res_dir, filename, dmt_path
+
+    if row >= 0 and matrix.any():
+        return matrix[row]
 
     res_dir, filename = get_directory_info(filepath)
     dmt_path = '%spkl/%s_dmt_%s/' % (res_dir, filename.rstrip('.json'), mode)
@@ -407,8 +411,7 @@ cdef np.ndarray get_clusters_distance_matrix(dict utl_or_enr_tensor, dict conden
         if row >= 0 and os.path.exists(dmt_path + str(row) + '.pickle'):
             with open(dmt_path + str(row) + '.pickle', 'rb') as f:
                 clusters_dist_matrix[row] = pickle.load(f)
-            if not '_eval' in mode:
-                print("-> Loaded pre-computed cluster's distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
+            print("-> Loaded pre-computed cluster's distance vector from ../" + dmt_path.rsplit('../', 1)[1] + str(row) + '.pickle')
             return clusters_dist_matrix[row]
 
         for i in range(num_clusters):
@@ -557,9 +560,9 @@ cdef np.ndarray recommend_overall_most_frequent_therapies_as_baseline(dict datas
     return np.array(sorted([therapy_z for therapy_z in frequencies], key=lambda therapy_z: -frequencies[therapy_z])[:5])
 
 
-cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
+cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
     cdef:
-        str filename, mode, res_dir, eval_path
+        str filename, res_dir, eval_path
         float accuracy
         size_t i, j, med, row, eval, patient_x, pcond_y, therapy_z, pred_therapy_z, num_patients, num_conditions, num_therapies
         tuple rky_patients, rky_conditions, rky_therapies
@@ -570,22 +573,18 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
     assert os.path.exists(filepath)
     np.random.seed(123)
 
-    if not arg_patient_id:
+    if not arg_patient_id and not arg_pc_id:
         print('***********************')
         print('* E V A L U A T I O N *')
         print('***********************')
-        if arg_pc_id:
-            assert arg_pc_id.startswith('mode=')
-            mode = arg_pc_id.lstrip('mode=')
-            assert mode in ('baseline', 'simple', 'hybrid')
-            print('-> Selected method:', mode)
-            eval = 2
-        else:
-            eval = 1
+        eval = 1
     else:
         assert arg_patient_id.isdigit() and arg_pc_id.lstrip('pc').isdigit()
         eval = 0
-    if eval < 2:
+    if mode:
+        assert mode in ('baseline', 'simple', 'hybrid')
+        print('-> Selected method:', mode)
+    else:
         while True:
             mode = input('-> Please select method (b=baseline, s=simple, h=hybrid): ')
             if mode.lower() == 'b':
@@ -665,9 +664,9 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
             condensed_utility_tensor = condense_utilities(utility_tensor, patients_to_clusters, filepath, mode)
             if eval:
                 if mode.startswith('hybrid'):
-                    get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row = -1)
+                    matrix = get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row=-1)
                 else:
-                    get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=-1)
+                    matrix = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=-1)
             for j in range(len(test_triples) if eval else 1):
                 if eval:
                     patient = dataset['Patients'][test_triples[j][0]]
@@ -677,9 +676,11 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
                 med = patients_to_clusters[int(patient['id']) - 1] if type(patient['id']) == str else patients_to_clusters[patient['id']]
                 row = list(condensed_utility_tensor).index(med)
                 if mode.startswith('hybrid'):
-                    clusters_dist_vector = get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode, row=row)
+                    clusters_dist_vector = get_clusters_distance_matrix(enriched_tensor, condensed_utility_tensor, filepath, mode,
+                                                                        row=row, matrix=matrix if eval else np.array(0))
                 else:
-                    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode, row=row)
+                    clusters_dist_vector = get_clusters_distance_matrix(utility_tensor, condensed_utility_tensor, filepath, mode,
+                                                                        row=row, matrix=matrix if eval else np.array(0))
                 rky_conditions = get_relevant_keys(dataset['Conditions'], filepath, mode, label='conditions') if mode.startswith('hybrid') else ()
                 rky_therapies = get_relevant_keys(dataset['Therapies'], filepath, mode, label='therapies') if mode.startswith('hybrid') else ()
                 recommendations = recommend(patient, pcond, clusters_dist_vector, condensed_utility_tensor, num_conditions, num_therapies, mode,
@@ -718,8 +719,10 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id):
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[2] == '--eval':
         main(sys.argv[1], '', '')
-    elif len(sys.argv) == 5 and (sys.argv[2], sys.argv[3]) == ('--eval', '-m'):
-        main(sys.argv[1], '', 'mode=' + sys.argv[4])
-    else:
-        assert len(sys.argv) == 4
+    elif len(sys.argv) == 4:
         main(sys.argv[1], sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 5 and (sys.argv[2], sys.argv[3]) == ('--eval', '-m'):
+        main(sys.argv[1], '', '', mode=sys.argv[4])
+    else:
+        assert len(sys.argv) == 6 and sys.argv[4] == '-m'
+        main(sys.argv[1], sys.argv[2], sys.argv[3], mode=sys.argv[5])
