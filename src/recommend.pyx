@@ -151,6 +151,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
                     tr_start, tr_end = trials[k]['start'], trials[k]['end']
                     duration_in_days = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime(tr_start, '%Y%m%d')).days)
                     success /= 1 + np.log(1 + duration_in_days) # factor in inverse trial duration for success criterion
+                    min_success, max_success = min(success, min_success), max(success, max_success)
                     if mode.startswith('hybrid'):
                         end = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime('19000101', '%Y%m%d')).days)
                         min_date, max_date = min(end, min_date), max(end, max_date)
@@ -286,7 +287,7 @@ cdef np.ndarray cluster_patients(dict utl_or_enr_tensor, size_t num_patients, si
         str bin_dir, filename, p2c_path
         np.ndarray sample, sample_dist_matrix, results, medoids, patients_to_clusters
 
-    np.random.seed(123) # arbitrary
+    np.random.seed(123)
     bin_dir, filename = get_directory_info(filepath)
     p2c_path = '%spkl/%s_p2c_%s.pickle' % (bin_dir, filename.rstrip('.json'), mode)
 
@@ -535,7 +536,6 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
                 final_utilities[previous_therapy_z] -= 1.01 * len(condensed_utility_tensor) # therapies already administered for same 'pc' should be dispreferred
     recommendations_list = list((item[0] for item in sorted((item for item in final_utilities.items()), key=lambda item: -item[1])))
     if len(recommendations_list) < 5: # only if length of supported list of therapies is smaller than 5, then fill up with random choices
-        np.random.seed(234) # arbitrary
         random_sample = np.random.choice(num_therapies, 10, replace=False)
         for i in range(10):
             if random_sample[i] not in recommendations_list:
@@ -643,7 +643,7 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                         success /= 1 + np.log(1 + duration_in_days)
                         all_successes.append(success)
                 all_successes.sort()
-                threshold_success = all_successes[len(all_successes) * 3 // 4] # cut-off after third quartile
+                threshold_success = all_successes[len(all_successes) * 3 // 4] # cut-off at third quartile
             else:
                 assert len(test_triples) == len(deleted_trials)
                 for j, trial in enumerate(deleted_trials):
@@ -652,7 +652,7 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                 mode = mode.split('_eval')[0]
             mode += '_eval%d' % i
             print('\n-> Starting evaluation round %d ...' % (i + 1))
-            np.random.seed(456 + i) # arbitrary
+            np.random.seed(i)
             test_set = np.random.choice(num_patients, num_patients // 5, replace=False)
             deleted_trials = []
             test_triples = []
@@ -735,8 +735,8 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
         hard_accuracies.append(hard_accuracy)
         soft_accuracies.append(soft_accuracy)
         numbers_testcases.append(len(predictions))
-        print('-> Hard accuracy: %0.3f' % hard_accuracy)
-        print('-> Soft accuracy: %0.3f' % soft_accuracy)
+        print('-> Hard accuracy over %d test cases: %0.3f' % (numbers_testcases, hard_accuracy))
+        print('-> Soft accuracy over %d test cases: %0.3f' % (numbers_testcases, soft_accuracy))
     hard_accuracy = sum(hard_accuracies) / len(hard_accuracies)
     soft_accuracy = sum(soft_accuracies) / len(soft_accuracies)
     print('\n-> OVERALL HARD ACCURACY: %0.3f' % hard_accuracy)
