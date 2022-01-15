@@ -277,6 +277,7 @@ cdef np.ndarray cluster_patients(dict utl_or_enr_tensor, size_t num_patients, si
         str res_dir, filename, p2c_path
         np.ndarray sample, sample_dist_matrix, results, medoids, patients_to_clusters
 
+    np.random.seed(123)
     res_dir, filename = get_directory_info(filepath)
     p2c_path = '%spkl/%s_p2c_%s.pickle' % (res_dir, filename.rstrip('.json'), mode)
 
@@ -467,6 +468,8 @@ cdef np.ndarray recommend(dict patient, dict pcond, np.ndarray clusters_dist_vec
         np.ndarray recommendations, random_sample
         dict final_utilities, rel_keys_cond, key_vals_cond, rel_keys_th, key_vals_th, vals_to_counts, vals_to_avg_utilities
 
+    np.random.seed(234)
+
     condition_y = int(pcond['kind'].lstrip('Cond')) - 1
     if mode.startswith('hybrid'):
         rel_keys_cond, key_vals_cond = rky_conditions
@@ -571,7 +574,7 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
         np.ndarray test_set, patients_to_clusters, clusters_dist_vector, recommendations
 
     assert os.path.exists(filepath)
-    np.random.seed(123)
+    np.random.seed(456)
 
     if not arg_patient_id and not arg_pc_id:
         print('***********************')
