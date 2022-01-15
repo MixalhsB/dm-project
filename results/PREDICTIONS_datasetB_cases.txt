@@ -1,0 +1,11 @@
+PatientID	Patient Condition	Therapy#1	Therapy#2	Therapy#3	Therapy#4	Therapy#5
+6		pc32			Th12		Th38		Th11		Th5		Th49
+51345		pc277636		Th1		Th50		Th20		Th10		Th16
+82486		pc445475		Th24		Th30		Th9		Th7		Th37
+51348		pc277652		Th24		Th14		Th43		Th42		Th4
+51358		pc277696		Th23		Th27		Th24		Th29		Th14
+51362		pc277711		Th13		Th40		Th3		Th34		Th6
+51366		pc277723		Th29		Th33		Th14		Th46		Th30
+51387		pc277825		Th31		Th28		Th40		Th34		Th14
+51416		pc277986		Th25		Th21		Th42		Th14		Th40
+51453		pc278191		Th4		Th14		Th9		Th48		Th30
