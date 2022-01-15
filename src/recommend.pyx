@@ -110,10 +110,10 @@ cdef tuple get_relevant_keys(list sub_dataset, str filepath, str mode, str label
 cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
     cdef:
         size_t i, j, k, y, z, num_patients, num_conditions, num_therapies
-        float success, end, min_date, max_date, duration_in_days, diagnosed
+        float success, min_success, max_success, end, min_date, max_date, duration_in_days, diagnosed
         str bin_dir, filename, utl_path, pc_id, pc_kind, pc_diagnosed, tr_pc_id, tr_th_id, tr_start, tr_end
         set remaining_ks, matching_ks
-        list pconditions, trials, all_successes
+        list pconditions, trials
         dict patient, utility_tensor
 
     bin_dir, filename = get_directory_info(filepath)
@@ -126,7 +126,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
 
     utility_tensor = {}
     half_enriched_tensor = {} # only relevant in 'hybrid' mode; stays empty otherwise
-    all_successes = []
+    min_success, max_success = 100.0, 0.0 # initial values; to be determined
     if mode.startswith('hybrid'):
         min_date, max_date = 73048.0, 0.0 # a.k.a. initially 2099-12-31, 1900-01-01
     num_patients, num_conditions, num_therapies = len(dataset['Patients']), len(dataset['Conditions']), len(dataset['Therapies'])
@@ -147,7 +147,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
             for k in sorted(remaining_ks): # efficiently iterate over corresponding trials
                 tr_pc_id = trials[k]['condition']
                 if pc_id == tr_pc_id:
-                    success = 0.01 * float(str(trials[k]['successful']).rstrip('%')) # cover both 100 and '100%'
+                    success = float(str(trials[k]['successful']).rstrip('%')) # cover both 100 and '100%'
                     tr_start, tr_end = trials[k]['start'], trials[k]['end']
                     duration_in_days = float((dt.strptime(tr_end, '%Y%m%d') - dt.strptime(tr_start, '%Y%m%d')).days)
                     success /= 1 + np.log(1 + duration_in_days) # factor in inverse trial duration for success criterion
@@ -168,7 +168,6 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
                         utility_tensor[i][y][z] = max(success, utility_tensor[i][y][z])
                         if mode.startswith('hybrid'):
                             half_enriched_tensor[i][num_conditions + y][z] = max(end, half_enriched_tensor[i][num_conditions + y][z])
-                    all_successes.append(success)
                     matching_ks.add(k)
             if mode.startswith('hybrid'):
                 if num_conditions + y not in half_enriched_tensor[i]: # condition had no corresponding trials
@@ -181,6 +180,14 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
                 else:
                     half_enriched_tensor[i][num_conditions + y][num_therapies] = max(diagnosed, half_enriched_tensor[i][num_conditions + y][num_therapies])
             remaining_ks = remaining_ks.difference(matching_ks)
+    assert max_success > 0.0
+    print()
+    for i in range(num_patients):
+        print('-> Normalizing values in raw utility tensor', i + 1, '/', num_patients, '...', end='\r')
+        for y in utility_tensor[i]:
+            for z in utility_tensor[i][y]:
+                utility_tensor[i][y][z] -= min_success
+                utility_tensor[i][y][z] /= max_success
     if mode.startswith('hybrid'):
         assert max_date > 0.0
         print()
@@ -199,7 +206,7 @@ cdef tuple get_raw_tensors(dict dataset, str filepath, str mode):
         pickle.dump((utility_tensor, half_enriched_tensor), f)
     print('\n-> Saved raw utility tensor%s to ../' % (' and trial-recency tensor' if mode.startswith('hybrid') else '') + utl_path.rsplit('../', 1)[1])
 
-    return (utility_tensor, half_enriched_tensor, all_successes)
+    return (utility_tensor, half_enriched_tensor)
 
 
 cdef dict get_enriched_tensor(dict utility_tensor, dict half_enriched_tensor, tuple rky_patients, size_t num_conditions, str filepath, str mode):
@@ -567,7 +574,7 @@ cdef np.ndarray recommend_overall_most_frequent_therapies_as_baseline(dict datas
 cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
     cdef:
         str filename, res_dir, eval_dir, eval_path
-        float success, threshold_success, duration_in_days, hard_accuracy, soft_accuracy
+        float hard_accuracy, soft_accuracy, success, threshold_success, duration_in_days
         size_t i, j, med, row, eval, patient_x, pcond_y, therapy_z, pred_therapy_z, num_patients, num_conditions, num_therapies
         tuple rky_patients, rky_conditions, rky_therapies
         list all_successes, deleted_trials, test_triples, predictions, numbers_testcases, hard_accuracies, soft_accuracies
@@ -627,7 +634,17 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
         numbers_testcases = []
     for i in range(10 if eval else 1):
         if eval:
-            if i > 0:
+            if i == 0:
+                all_successes = []
+                for patient in dataset['Patients']:
+                    for trial in patient['trials']:
+                        success = float(str(trial['successful']).rstrip('%'))
+                        duration_in_days = float((dt.strptime(trial['end'], '%Y%m%d') - dt.strptime(trial['start'], '%Y%m%d')).days)
+                        success /= 1 + np.log(1 + duration_in_days)
+                        all_successes.append(success)
+                all_successes.sort()
+                threshold_success = all_successes[len(all_successes) * 3 // 4] # cut-off after third quartile
+            else:
                 assert len(test_triples) == len(deleted_trials)
                 for j, trial in enumerate(deleted_trials):
                     dataset['Patients'][test_triples[j][0]]['trials'].append(trial)
@@ -644,9 +661,9 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                 if len(dataset['Patients'][patient_x]['trials']) == 0:
                     continue
                 trial = max(dataset['Patients'][patient_x]['trials'], key=lambda trial: trial['start'])
-                success = 0.01 * float(str(trial['successful']).rstrip('%')) # cover both 100 and '100%'
+                success = float(str(trial['successful']).rstrip('%'))
                 duration_in_days = float((dt.strptime(trial['end'], '%Y%m%d') - dt.strptime(trial['start'], '%Y%m%d')).days)
-                success /= 1 + np.log(1 + duration_in_days)  # factor in inverse trial duration for success criterion
+                success /= 1 + np.log(1 + duration_in_days)
                 if success < threshold_success:
                     continue
                 pcond_y = int(trial['condition'].lstrip('pc')) - 1
@@ -664,9 +681,7 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
             for j in range(len(test_triples)):
                 predictions.append(recommendations)
         else:
-            utility_tensor, half_enriched_tensor, all_successes = get_raw_tensors(dataset, filepath, mode)
-            if eval:
-                threshold_success = np.mean(all_successes) + np.std(all_successes)
+            utility_tensor, half_enriched_tensor = get_raw_tensors(dataset, filepath, mode)
             if mode.startswith('hybrid'):
                 rky_patients = get_relevant_keys(dataset['Patients'], filepath, mode, label='patients')
                 enriched_tensor = get_enriched_tensor(utility_tensor, half_enriched_tensor, rky_patients, num_conditions, filepath, mode)
