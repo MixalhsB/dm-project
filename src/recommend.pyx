@@ -3,6 +3,7 @@
 from datetime import datetime as dt
 import os
 import sys
+import time
 import math
 import json
 import pickle
@@ -574,6 +575,7 @@ cdef np.ndarray recommend_overall_most_frequent_therapies_as_baseline(dict datas
 cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
     cdef:
         str filename, res_dir, eval_dir, eval_path
+        double start_time, end_time
         float hard_accuracy, soft_accuracy, success, threshold_success, duration_in_days
         size_t i, j, med, row, eval, patient_x, pcond_y, therapy_z, pred_therapy_z, num_patients, num_conditions, num_therapies
         tuple rky_patients, rky_conditions, rky_therapies
@@ -672,10 +674,15 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                 dataset['Patients'][patient_x]['trials'].remove(trial)
                 deleted_trials.append(trial)
             assert len(test_triples) > 0
+        start_time = time.time() # start timer for measuring exeuction speed
+        print('-> Started execution timer!')
         if mode.startswith('baseline'):
             recommendations = recommend_overall_most_frequent_therapies_as_baseline(dataset)
             if not eval:
                 print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
+                end_time = time.time()  # start timer for measuring exeuction speed
+                print('-> Execution time:', round((end_time - start_time) * 1000), 'ms')
+                print(start_time, end_time)
                 return
 
             for j in range(len(test_triples)):
@@ -715,6 +722,8 @@ cdef void main(str filepath, str arg_patient_id, str arg_pc_id, str mode=''):
                                             rky_conditions=rky_conditions, rky_therapies=rky_therapies)
                 if not eval:
                     print('-> Recommendations: ' + ', '.join(('Th' + str(therapy_z + 1) for therapy_z in recommendations)).rstrip(', '))
+                    end_time = time.time()  # start timer for measuring exeuction speed
+                    print('-> Execution time:', round((end_time - start_time) * 1000), 'ms')
                     return
 
                 predictions.append(recommendations)

@@ -1,0 +1,4 @@
+PatientID	Patient Condition	SIMPLE Run time (ms)	SIMPLE Full time (ms)	HYBRID Run time (ms)	HYBRID Full time (ms)
+7604		pc40874			450			100679			2493			307371
+10869		pc58329			468			100697			1526			306404
+59163		pc318106		471			100700			2003			306881

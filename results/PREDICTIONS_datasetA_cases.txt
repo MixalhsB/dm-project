@@ -1,4 +1,4 @@
 PatientID	Patient Condition	Therapy#1	Therapy#2	Therapy#3	Therapy#4	Therapy#5
-7604		pc40874			Th108		Th140		Th120		Th32		Th116	
+7604		pc40874			Th108		Th140		Th120		Th32		Th116
 10869		pc58329			Th123		Th170		Th151		Th130		Th73
 59163		pc318106		Th78		Th140		Th108		Th32		Th124
